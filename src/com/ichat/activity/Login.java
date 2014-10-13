@@ -5,8 +5,6 @@ import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import com.ichat.config.MyConfig;
 import com.ichat.mode.MyContext;
-import com.ichat.util.Out;
-
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Looper;
