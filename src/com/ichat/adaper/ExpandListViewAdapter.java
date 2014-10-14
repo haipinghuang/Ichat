@@ -79,8 +79,7 @@ public class ExpandListViewAdapter extends BaseExpandableListAdapter{
 			viewHolder=(ViewHolder) convertView.getTag();
 		}
 		Out.println("count "+groupData.get(groupPosition).getEntries().size());
-		Out.println("count "+groupData.get(groupPosition).getEntries().size());
-		viewHolder.count.setText(groupData.get(groupPosition).getEntries().size());
+		viewHolder.count.setText(groupData.get(groupPosition).getEntries().size()+"");
 		viewHolder.groupName.setText(groupData.get(groupPosition).getName());
 		return convertView;
 	}

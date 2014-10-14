@@ -125,9 +125,17 @@ public class MainChat extends Activity {
 		@Override
 		public boolean onChildClick(ExpandableListView parent, View v,
 				int groupPosition, int childPosition, long id) {
-			return false;
+			childData.addAll(groupData.get(groupPosition).getEntries());
+			RosterEntry rosterEntry=childData.get(childPosition);
+			Intent intent = new Intent();
+			bundle = new Bundle();
+			intent.setClass(MainChat.this, ChatActivity.class);
+			Entry entry=new Entry(rosterEntry.getName(),UserRoster.getPresence(rosterEntry),rosterEntry.getUser());
+			bundle.putSerializable("entry", entry);
+			intent.putExtras(bundle);
+			startActivity(intent);
+			return true;
 		}
-		
 	}
 	/*
 	 * 单独开启一个接收消息更新到会话的线程
