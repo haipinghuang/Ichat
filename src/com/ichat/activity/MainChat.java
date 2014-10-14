@@ -30,6 +30,7 @@ import android.view.animation.TranslateAnimation;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ExpandableListView;
+import android.widget.ExpandableListView.OnChildClickListener;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -82,6 +83,7 @@ public class MainChat extends Activity {
 	private ChatMsgEntity lastMsg=null;
 	private ChatDao chatDao=new ChatDao(this);
 	private List<RosterGroup> groupData=new ArrayList<RosterGroup>();
+	private List<RosterEntry> childData=new ArrayList<RosterEntry>();
 	private ExpandableListView expandListView;
 	private ExpandListViewAdapter expandListAdapter;
 	private Handler handler=new Handler(){
@@ -103,6 +105,7 @@ public class MainChat extends Activity {
 		expandListAdapter=new ExpandListViewAdapter(this, groupData);
 		expandListView=(ExpandableListView)view2.findViewById(R.id.elv);
 		expandListView.setAdapter(expandListAdapter);
+//		expandListView.setOnChildClickListener(onChildClickListener)
 //		expandListAdapter.notifyDataSetChanged();
 		
 //		ListView entries_lv = (ListView)view2.findViewById(R.id.lv_entries);
@@ -116,6 +119,15 @@ public class MainChat extends Activity {
 		session_lv.setOnItemClickListener(new SessionItemClickListener());
 		receiveMsg();
 		Out.println("M-oncreate");
+	}
+	private class MyOnChildClickListener implements OnChildClickListener{
+
+		@Override
+		public boolean onChildClick(ExpandableListView parent, View v,
+				int groupPosition, int childPosition, long id) {
+			return false;
+		}
+		
 	}
 	/*
 	 * 单独开启一个接收消息更新到会话的线程

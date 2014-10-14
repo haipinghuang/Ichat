@@ -8,18 +8,16 @@
         android:id="@+id/groupName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:paddingLeft="40sp"
         android:layout_alignParentLeft="true"
-        android:textColor="#000"
-        android:text="同学" />
+        android:paddingLeft="40sp"
+        android:textColor="#000" />
 
     <TextView
         android:id="@+id/count"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
-        android:textColor="#000"
         android:paddingRight="5sp"
-        android:text="12/36" />
+        android:textColor="#000" />
 
 </RelativeLayout>

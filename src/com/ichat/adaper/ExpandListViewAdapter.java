@@ -6,7 +6,6 @@ import org.jivesoftware.smack.RosterEntry;
 import org.jivesoftware.smack.RosterGroup;
 
 import com.ichat.activity.R;
-import com.ichat.adaper.ChatMsgViewAdapter.ViewHolder;
 import com.ichat.util.Out;
 import com.ichat.util.UserRoster;
 
@@ -55,13 +54,11 @@ public class ExpandListViewAdapter extends BaseExpandableListAdapter{
 
 	@Override
 	public long getChildId(int groupPosition, int childPosition) {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public boolean hasStableIds() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
@@ -73,17 +70,17 @@ public class ExpandListViewAdapter extends BaseExpandableListAdapter{
 				ViewGroup.LayoutParams.MATCH_PARENT, 34);
 		if(convertView==null){
 			convertView=inflater.inflate(R.layout.group, null);
+			convertView.setLayoutParams(lp);
 			viewHolder = new ViewHolder();
 			viewHolder.groupName=(TextView) convertView.findViewById(R.id.groupName);
 			viewHolder.count=(TextView) convertView.findViewById(R.id.count);
 			convertView.setTag(viewHolder);
-			convertView.setLayoutParams(lp);
 		}else{
 			viewHolder=(ViewHolder) convertView.getTag();
 		}
 		Out.println("count "+groupData.get(groupPosition).getEntries().size());
-		int count=groupData.get(groupPosition).getEntries().size();
-		viewHolder.count.setText("45");
+		Out.println("count "+groupData.get(groupPosition).getEntries().size());
+		viewHolder.count.setText(groupData.get(groupPosition).getEntries().size());
 		viewHolder.groupName.setText(groupData.get(groupPosition).getName());
 		return convertView;
 	}
