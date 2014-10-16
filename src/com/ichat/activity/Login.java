@@ -3,6 +3,10 @@ package com.ichat.activity;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.packet.Presence.Type;
+import org.jivesoftware.smackx.pubsub.PresenceState;
+
 import com.ichat.config.MyConfig;
 import com.ichat.mode.MyContext;
 import android.net.Uri;
@@ -59,8 +63,8 @@ public class Login extends Activity {
 	private void login_commit(String username, String pwd) {
 		config = new ConnectionConfiguration(MyConfig.host, MyConfig.port);
 		config.setSASLAuthenticationEnabled(false);
-		config.setSendPresence(true);
 		config.setReconnectionAllowed(true);
+		config.setSendPresence(false);
 		conn=(MyContext.getInstance().getConn()==null?new XMPPConnection(config):MyContext.getInstance().getConn());
 		try {
 			conn.connect();

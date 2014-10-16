@@ -1,5 +1,4 @@
 package com.ichat.activity;
-
 import android.os.Bundle;
 import android.os.Handler;
 import android.app.Activity;

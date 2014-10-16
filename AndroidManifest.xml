@@ -5,7 +5,7 @@
     android:versionName="1.0" >
 
     <uses-sdk
-        android:minSdkVersion="10"
+        android:minSdkVersion="11"
         android:targetSdkVersion="15" />
     <uses-permission android:name="android.permission.INTERNET"/>
 
@@ -22,12 +22,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".Login"  android:theme="@android:style/Theme.NoTitleBar" />        
+        <activity android:name=".Login"  android:theme="@style/Anim_style2" />        
         <activity android:name=".Welcome"  android:theme="@style/Anim_style2"  />
         <activity android:name=".WhatsnewDoor" android:theme="@style/Anim_style2" />
         <activity android:name=".MainChat" android:theme="@style/Anim_style2" />
         <activity android:name=".Whatsnew"  android:theme="@style/Anim_style2" />
-        <activity android:name=".ChatActivity"  android:theme="@android:style/Theme.NoTitleBar" />
+        <activity android:name=".ChatActivity"  android:theme="@style/Anim_style2" />
         <activity android:name=".ShakeActivity"  android:theme="@android:style/Theme.NoTitleBar" />
         <activity android:name=".InfoXiaohei"  android:theme="@android:style/Theme.NoTitleBar" />
         <activity android:name="Exit" android:theme="@style/MyDialogStyle" />        

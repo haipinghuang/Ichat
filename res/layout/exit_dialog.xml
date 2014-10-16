@@ -14,7 +14,7 @@
             android:padding="5dp"
             android:textColor="#333"
             android:textSize="20sp"
-            android:text="退出微信" />
+            android:text="退出Ichat" />
         
         <TextView
             android:layout_width="wrap_content"

@@ -78,7 +78,6 @@ public class ExpandListViewAdapter extends BaseExpandableListAdapter{
 		}else{
 			viewHolder=(ViewHolder) convertView.getTag();
 		}
-		Out.println("count "+groupData.get(groupPosition).getEntries().size());
 		viewHolder.count.setText(groupData.get(groupPosition).getEntries().size()+"");
 		viewHolder.groupName.setText(groupData.get(groupPosition).getName());
 		return convertView;
@@ -107,7 +106,7 @@ public class ExpandListViewAdapter extends BaseExpandableListAdapter{
 
 	@Override
 	public boolean isChildSelectable(int groupPosition, int childPosition) {
-		return false;
+		return true;
 	}
 	static class ViewHolder{
 		public TextView groupName;
