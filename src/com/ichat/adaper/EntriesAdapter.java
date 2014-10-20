@@ -13,14 +13,13 @@ import android.webkit.WebView.FindListener;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
+import com.ichat.activity.MainChat;
 import com.ichat.activity.R;
-import com.ichat.mode.MyContext;
-import com.ichat.util.UserRoster;
+import com.ichat.util.MyContext;
 
 public class EntriesAdapter extends BaseAdapter {
 	private List<RosterEntry> entryList;
 	private LayoutInflater inflater;
-
 	@Override
 	public int getCount() {
 		return this.entryList.size();
@@ -55,7 +54,7 @@ public class EntriesAdapter extends BaseAdapter {
 			viewHolder=(ViewHolder) convertView.getTag();
 		}
 		viewHolder.name.setText(entryList.get(position).getName());
-		viewHolder.status.setText(UserRoster.getPresence(entryList.get(position)));
+		viewHolder.status.setText(MainChat.instance.getPresence(entryList.get(position)));
 		return convertView;
 	}
 

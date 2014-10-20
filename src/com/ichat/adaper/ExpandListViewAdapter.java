@@ -4,11 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jivesoftware.smack.RosterEntry;
 import org.jivesoftware.smack.RosterGroup;
-
+import com.ichat.activity.MainChat;
 import com.ichat.activity.R;
-import com.ichat.util.Out;
-import com.ichat.util.UserRoster;
-
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -78,6 +75,8 @@ public class ExpandListViewAdapter extends BaseExpandableListAdapter{
 		}else{
 			viewHolder=(ViewHolder) convertView.getTag();
 		}
+		convertView.setTag(R.id.exit_layout, groupPosition);//group
+		convertView.setTag(R.id.exit_layout2, -1);//child
 		viewHolder.count.setText(groupData.get(groupPosition).getEntries().size()+"");
 		viewHolder.groupName.setText(groupData.get(groupPosition).getName());
 		return convertView;
@@ -97,9 +96,12 @@ public class ExpandListViewAdapter extends BaseExpandableListAdapter{
 		}else{
 			viewHolder=(ViewHolder) convertView.getTag();
 		}
+		convertView.setTag(R.id.exit_layout, groupPosition);//group
+		convertView.setTag(R.id.exit_layout2, childPosition);//child
+
 		childData.addAll(groupData.get(groupPosition).getEntries());
 		viewHolder.username.setText(childData.get(childPosition).getName());
-		viewHolder.status.setText(UserRoster.getPresence(childData.get(childPosition)));
+		viewHolder.status.setText(MainChat.instance.getPresence(childData.get(childPosition)));
 		childData.clear();
 		return convertView;
 	}

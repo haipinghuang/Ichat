@@ -1,6 +1,7 @@
 package com.ichat.activity;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -9,13 +10,22 @@ import org.jivesoftware.smack.ChatManagerListener;
 import org.jivesoftware.smack.MessageListener;
 import org.jivesoftware.smack.RosterEntry;
 import org.jivesoftware.smack.RosterGroup;
+import org.jivesoftware.smack.RosterListener;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smackx.OfflineMessageManager;
+import org.jivesoftware.smackx.packet.MUCOwner.Destroy;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.AlertDialog.Builder;
+import android.app.Dialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.view.PagerAdapter;
@@ -27,13 +37,13 @@ import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ExpandableListView;
 import android.widget.ExpandableListView.OnChildClickListener;
 import android.widget.ImageView;
@@ -43,22 +53,22 @@ import android.widget.PopupWindow;
 
 import com.ichat.adaper.ExpandListViewAdapter;
 import com.ichat.adaper.SessionsAdapter;
+import com.ichat.config.MyConfig;
 import com.ichat.dao.ChatDao;
 import com.ichat.mode.ChatMsgEntity;
 import com.ichat.mode.Entry;
-import com.ichat.mode.MyContext;
 import com.ichat.mode.Session;
 import com.ichat.util.ChatUtil;
 import com.ichat.util.Date;
+import com.ichat.util.MyContext;
 import com.ichat.util.Out;
-import com.ichat.util.UserRoster;
 
 /**
  * 登录成功后的主界面
  * 
  * @author huanghai
  */
-public class MainChat extends Activity implements OnClickListener {
+public class MainChat extends Activity {
 	public static MainChat instance = null;
 	private ViewPager mTabPager;
 	private ImageView mTabImg;// 动画图片
@@ -82,12 +92,16 @@ public class MainChat extends Activity implements OnClickListener {
 	private SessionsAdapter sessionsAdapter;
 	private Bundle bundle;
 	private Session session;
-	private ChatMsgEntity lastMsg = null;
 	private ChatDao chatDao = new ChatDao(this);
 	private List<RosterGroup> groupData = new ArrayList<RosterGroup>();
 	private List<RosterEntry> childData = new ArrayList<RosterEntry>();
 	private ExpandableListView expandListView;
 	private ExpandListViewAdapter expandListAdapter;
+	private MyBroadcastReceiver myReceiver = new MyBroadcastReceiver();
+	private MyContext myContext;
+	/**
+	 * 监听回话变化
+	 */
 	private Handler handler = new Handler() {
 		@Override
 		public void handleMessage(android.os.Message msg) {
@@ -103,19 +117,68 @@ public class MainChat extends Activity implements OnClickListener {
 		// 启动activity时不自动弹出软键盘
 		init();
 		addChatListener();
-		groupData.addAll(MyContext.getInstance().getRoster().getGroups());
+		groupData.addAll(myContext.getRoster().getGroups());
 		expandListAdapter = new ExpandListViewAdapter(this, groupData);
 		expandListView = (ExpandableListView) view2.findViewById(R.id.elv);
 		expandListView.setAdapter(expandListAdapter);
 		expandListView.setOnChildClickListener(new MyOnChildClickListener());
+		expandListView.setLongClickable(true);
+		expandListView
+				.setOnItemLongClickListener(new MyOnItemLongClickListener());
+
 		mTabPageSetAdapter(views);
 		sessionsAdapter = new SessionsAdapter(this, sessionList);
 		session_lv = (ListView) view1.findViewById(R.id.session_lv);
 		session_lv.setAdapter(sessionsAdapter);
 		session_lv.setOnItemClickListener(new SessionItemClickListener());
-		receiveMsg();
+
+		IntentFilter filter = new IntentFilter(MyConfig.action);
+		registerReceiver(myReceiver, filter);
+
 		receiveOffLineMsg();
-		Out.println("M-oncreate");
+		addRosterListerer();
+	}
+
+	// 监听好友变动
+	private void addRosterListerer() {
+		myContext.getRoster()
+				.addRosterListener(new RosterListener() {
+
+					@Override
+					public void presenceChanged(Presence arg0) {
+						expandListDataChanged();
+					}
+
+					@Override
+					public void entriesUpdated(Collection<String> arg0) {
+						expandListDataChanged();
+					}
+
+					@Override
+					public void entriesDeleted(Collection<String> arg0) {
+						expandListDataChanged();
+						Out.println("entriesDeleted");
+					}
+
+					private void expandListDataChanged() {
+						runOnUiThread(new Runnable() {
+							@Override
+							public void run() {
+								// myContext.getRoster().reload();
+								groupData.clear();
+								groupData.addAll(myContext
+										.getRoster().getGroups());
+								expandListAdapter.notifyDataSetChanged();
+							}
+						});
+
+					}
+
+					@Override
+					public void entriesAdded(Collection<String> arg0) {
+						expandListDataChanged();
+					}
+				});
 	}
 
 	private void receiveOffLineMsg() {
@@ -124,23 +187,13 @@ public class MainChat extends Activity implements OnClickListener {
 			@Override
 			public void run() {
 				OfflineMessageManager offLineMsgManage = new OfflineMessageManager(
-						MyContext.getInstance().getConn());
-				Iterator<Message> it = null;
-				Message msg = null;
+						myContext.getConn());
 				try {
-					it = offLineMsgManage.getMessages();
+					offLineMsgManage.getMessages();
 				} catch (XMPPException e) {
 					Log.e("MsgError", "获取离线信息失败");
 					e.printStackTrace();
 				}
-				// while (it.hasNext()) {
-				// msg = it.next();
-				// String msgFrom = msg.getFrom();
-				// String msgContent = msg.getBody();
-				// Message.Type msgType = msg.getType();
-				// Out.println("form:" + msgFrom + "|content:" + msgContent
-				// + "|type:" + msgType);
-				// }
 				try {
 					offLineMsgManage.deleteMessages();
 				} catch (XMPPException e) {
@@ -148,95 +201,17 @@ public class MainChat extends Activity implements OnClickListener {
 					e.printStackTrace();
 				}
 				Presence presences = new Presence(Presence.Type.available);
-				MyContext.getInstance().getConn().sendPacket(presences);
+				myContext.getConn().sendPacket(presences);
 			}
 		}).start();
 
-	}
-
-	private class MyOnChildClickListener implements OnChildClickListener {
-
-		@Override
-		public boolean onChildClick(ExpandableListView parent, View v,
-				int groupPosition, int childPosition, long id) {
-			childData.addAll(groupData.get(groupPosition).getEntries());
-			RosterEntry rosterEntry = childData.get(childPosition);
-			Intent intent = new Intent();
-			bundle = new Bundle();
-			intent.setClass(MainChat.this, ChatActivity.class);
-			Entry entry = new Entry(rosterEntry.getName(),
-					UserRoster.getPresence(rosterEntry), rosterEntry.getUser());
-			bundle.putSerializable("entry", entry);
-			intent.putExtras(bundle);
-			startActivity(intent);
-			childData.clear();
-			return false;
-		}
-	}
-
-	/*
-	 * 单独开启一个接收消息更新到会话的线程
-	 */
-	private void receiveMsg() {
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				while (true) {
-					lastMsg = MyContext.getInstance().getLastMsg();
-					if (lastMsg != null) {
-						String name = (lastMsg.getPartner() != null ? lastMsg
-								.getPartner() : lastMsg.getGroupName());
-						for (Session s : sessionList) {
-							if (s.getName().equals(
-									lastMsg.getPartner() != null ? lastMsg
-											.getPartner() : lastMsg
-											.getGroupName())) {
-								sessionList.remove(s);
-								break;
-							}
-						}
-						session = new Session(name, lastMsg.getText(), lastMsg
-								.getDate());
-						sessionList.add(session);
-						MyContext.getInstance().setLastMsg(null);
-						handler.sendMessage(new android.os.Message());
-					}
-				}
-			}
-		}).start();
-	}
-
-	private void mTabPageSetAdapter(ArrayList<View> views2) {
-		mPagerAdapter = new PagerAdapter() {
-			@Override
-			public boolean isViewFromObject(View arg0, Object arg1) {
-				return arg0 == arg1;
-			}
-
-			@Override
-			public int getCount() {
-				return views.size();
-			}
-
-			@Override
-			public void destroyItem(View container, int position, Object object) {
-				((ViewPager) container).removeView(views.get(position));
-			}
-
-			@Override
-			public Object instantiateItem(View container, int position) {
-				((ViewPager) container).addView(views.get(position));
-				return views.get(position);
-			}
-		};
-		mTabPager.setAdapter(mPagerAdapter);
 	}
 
 	/**
 	 * 创建chat监听器
 	 */
 	private void addChatListener() {
-		MyContext.getInstance().getChatManager()
+		myContext.getChatManager()
 				.addChatListener(new ChatManagerListener() {
 
 					@Override
@@ -247,7 +222,7 @@ public class MainChat extends Activity implements OnClickListener {
 						 * 判断Chat是否由用户主动创建
 						 */
 						if (!createdLocally) {
-							MyContext.getInstance().getChatList().add(chat);
+							myContext.getChatList().add(chat);
 							chat.addMessageListener(new MessageListener() {
 								@Override
 								public void processMessage(final Chat chat,
@@ -274,6 +249,7 @@ public class MainChat extends Activity implements OnClickListener {
 														.equals(ChatUtil
 																.getPartnerName(chat))) {
 													sessionList.remove(s);
+													break;
 												}
 											}
 											sessionList.add(session);
@@ -301,7 +277,7 @@ public class MainChat extends Activity implements OnClickListener {
 			bundle = new Bundle();
 			intent.setClass(MainChat.this, ChatActivity.class);
 			RosterEntry tEntry = null;
-			for (RosterEntry entry : MyContext.getInstance().getRoster()
+			for (RosterEntry entry : myContext.getRoster()
 					.getEntries()) {
 				if (entry.getName().equals(sessionList.get(position).getName())) {
 					tEntry = entry;
@@ -309,7 +285,7 @@ public class MainChat extends Activity implements OnClickListener {
 				}
 			}
 			Entry entry = new Entry(tEntry.getName(),
-					UserRoster.getPresence(tEntry), tEntry.getUser());
+					getPresence(tEntry), tEntry.getUser());
 			bundle.putSerializable("entry", entry);
 			intent.putExtras(bundle);
 			startActivity(intent);
@@ -318,6 +294,7 @@ public class MainChat extends Activity implements OnClickListener {
 
 	private void init() {
 		instance = this;
+		myContext=(MyContext) getApplication();
 		mTabPager = (ViewPager) findViewById(R.id.tabpager);
 		mTabPager.setOnPageChangeListener(new MyOnPageChangeListener());
 		mTab1 = (ImageView) findViewById(R.id.img_weixin);
@@ -516,30 +493,178 @@ public class MainChat extends Activity implements OnClickListener {
 		}
 		return false;
 	}
+
 	// 设置标题栏右侧按钮的作用
 	public void btnmainright(View v) {
 		Intent intent = new Intent(MainChat.this, MainTopRightDialog.class);
 		startActivity(intent);
 	}
 
-	@Override
-	public void onClick(View v) {
-		Intent intent = null;
-		switch (v.getId()) {
-		case R.id.btn_addFriend:
-			Out.println("R.id.add_friend");
-			break;
-		case R.id.btn_shake:// 手机摇一摇
-			intent = new Intent(MainChat.this, ShakeActivity.class);
-			startActivity(intent);
-			break;
-		case R.id.exit_settings:
-			intent = new Intent(MainChat.this, ExitFromSettings.class);
-			startActivity(intent);
-			break;
-		default:
+	// 点击了添加好友按钮
+	public void addFriend(View v) {
+		Intent intent = new Intent(MainChat.this, SearchFriend.class);
+		startActivity(intent);
+	}
 
+	/*
+	 * public void onClick(View v) { Intent intent = null; switch (v.getId()) {
+	 * case R.id.btn_shake:// 手机摇一摇 intent = new Intent(MainChat.this,
+	 * ShakeActivity.class); startActivity(intent); break; case
+	 * R.id.exit_settings: intent = new Intent(MainChat.this,
+	 * ExitFromSettings.class); startActivity(intent); break; } }
+	 */
+	public class MyBroadcastReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			ChatMsgEntity msg = (ChatMsgEntity) intent.getExtras()
+					.getSerializable("msg");
+			if (msg != null) {
+				String name = (msg.getPartner() != null ? msg.getPartner()
+						: msg.getGroupName());
+				for (Session s : sessionList) {
+					if (s.getName().equals(
+							msg.getPartner() != null ? msg.getPartner() : msg
+									.getGroupName())) {
+						sessionList.remove(s);
+						break;
+					}
+				}
+				session = new Session(name, msg.getText(), msg.getDate());
+				sessionList.add(session);
+				handler.sendMessage(new android.os.Message());
+			}
 		}
+	}
 
+	private class MyOnChildClickListener implements OnChildClickListener {
+
+		@Override
+		public boolean onChildClick(ExpandableListView parent, View v,
+				int groupPosition, int childPosition, long id) {
+			childData.addAll(groupData.get(groupPosition).getEntries());
+			RosterEntry rosterEntry = childData.get(childPosition);
+			Intent intent = new Intent();
+			bundle = new Bundle();
+			intent.setClass(MainChat.this, ChatActivity.class);
+			Entry entry = new Entry(rosterEntry.getName(),
+					getPresence(rosterEntry), rosterEntry.getUser());
+			bundle.putSerializable("entry", entry);
+			intent.putExtras(bundle);
+			startActivity(intent);
+			childData.clear();
+			return false;
+		}
+	}
+
+	private void mTabPageSetAdapter(ArrayList<View> views2) {
+		mPagerAdapter = new PagerAdapter() {
+			@Override
+			public boolean isViewFromObject(View arg0, Object arg1) {
+				return arg0 == arg1;
+			}
+
+			@Override
+			public int getCount() {
+				return views.size();
+			}
+
+			@Override
+			public void destroyItem(View container, int position, Object object) {
+				((ViewPager) container).removeView(views.get(position));
+			}
+
+			@Override
+			public Object instantiateItem(View container, int position) {
+				((ViewPager) container).addView(views.get(position));
+				return views.get(position);
+			}
+		};
+		mTabPager.setAdapter(mPagerAdapter);
+	}
+
+	public class MyOnItemLongClickListener implements OnItemLongClickListener {
+
+		@Override
+		public boolean onItemLongClick(AdapterView<?> parent, View view,
+				int position, long id) {
+			final int groupPosition = (Integer) view.getTag(R.id.exit_layout);
+			final int childPosition = (Integer) view.getTag(R.id.exit_layout2);
+			if (childPosition != -1) {
+				Builder dialog = new AlertDialog.Builder(MainChat.this);
+				dialog.setTitle("好友操作");
+				dialog.setItems(new String[] { "查看资料", "删除好友", "移至分组", },
+						new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface dialog,
+									int which) {
+								RosterEntry entry = null;
+								switch (which) {
+								case 0:
+									// 一个case执行后dialog自动消失
+									childData.addAll(groupData.get(
+											groupPosition).getEntries());
+									entry = childData.get(childPosition);
+									Intent intent=new Intent();
+									intent.putExtra("user", entry.getUser());
+									intent.setClass(MainChat.this,FriendInfo.class);
+									startActivity(intent);
+									break;
+								case 1:
+									childData.addAll(groupData.get(
+											groupPosition).getEntries());
+									entry = childData.get(childPosition);
+									try {
+										myContext.getRoster()
+												.removeEntry(entry);
+									} catch (XMPPException e) {
+										Log.e("error", "删除好友失败");
+										e.printStackTrace();
+									} finally {
+										childData.clear();
+									}
+									break;
+								case 2:
+									// 改变分组暂没实现
+									// childData.addAll(groupData.get(
+									// groupPosition).getEntries());
+									// entry = childData.get(childPosition);
+									// Intent intent=new Intent();
+									// intent.putExtra("group", groupPosition);
+									// startActivityForResult(intent,
+									// groupChanged);
+									break;
+								default:
+								}
+							}
+						})
+						.setNegativeButton("取消",
+								new DialogInterface.OnClickListener() {
+
+									@Override
+									public void onClick(DialogInterface dialog,
+											int which) {
+										dialog.cancel();
+									}
+
+								}).create().show();
+			} else {
+
+			}
+			return false;
+		}
+	}
+	public String getPresence(RosterEntry re){
+		boolean presence=myContext.getRoster().getPresence(re.getUser()).isAvailable();
+		if(presence){
+			return myContext.getRoster().getPresence(re.getUser()).getStatus();
+		}else{
+			return new String("离线");
+		}
+	}
+
+	@Override
+	public void finish() {
+		super.finish();
+		unregisterReceiver(myReceiver);
 	}
 }

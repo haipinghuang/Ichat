@@ -2,10 +2,16 @@
 Login.java 中第65行有错，程序第二次运行时会报MyContext.getInstance()==null------------已解决
 当一个账号被重复登陆的时候先登录的会中断连接，程序会挂掉！
 
-从会话中点击获取的用户状态和从联系人中点击获取的用户状态不同------------已解决
+从会话中点击获取的用户状态和从联系人中点击获取的用户状态不同
 
 接受的离线消息获取不到发送似的时间；
 
+程序按了back键，此chatactivity就会destroy,但创建的chat不会消失，还会接受消息
+	有时间改进下会话的更新方法{
+		用内容提供者发送通知，
+		在用内容观察者接收通知					
+		更新会话；
+	}														------------已解决
 
 
 
@@ -21,13 +27,6 @@ Login.java 中第65行有错，程序第二次运行时会报MyContext.getInstance()==null------
 
 程序进入了chatActivity,mainchat就不能监听新chat；意即mainchat的监听器会失效
 
-程序按了back键，此chatactivity就会destroy,但创建的chat不会消失，还会接受消息
-
-	有时间改进下会话的更新方法{
-		用内容提供者发送通知，
-		在用内容观察者接收通知
-		更新会话；
-	}
-
+在chatActivity界面按back键和按屏幕返回键都会执行stop--destroy；
 	
 chatActivity中得到的chat都会经过移除已经存在的listener；

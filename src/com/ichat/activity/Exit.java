@@ -1,6 +1,6 @@
 package com.ichat.activity;
 
-import com.ichat.mode.MyContext;
+import com.ichat.util.MyContext;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -14,12 +14,13 @@ import android.widget.Toast;
 public class Exit extends Activity {
 	// private MyDialog dialog;
 	private LinearLayout layout;
+	private MyContext myContext;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.exit_dialog);
-		// dialog=new MyDialog(this);
+		myContext=(MyContext) getApplication();
 		layout = (LinearLayout) findViewById(R.id.exit_layout);
 		layout.setOnClickListener(new OnClickListener() {
 
@@ -44,7 +45,7 @@ public class Exit extends Activity {
 
 	public void exitbutton0(View v) {
 		this.finish();
-		MyContext.getInstance().finalize();
+		myContext.finalize();
 		MainChat.instance.finish();// ¹Ø±ÕMain Õâ¸öActivity
 	}
 

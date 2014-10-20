@@ -8,7 +8,9 @@ import org.jivesoftware.smack.packet.Presence.Type;
 import org.jivesoftware.smackx.pubsub.PresenceState;
 
 import com.ichat.config.MyConfig;
-import com.ichat.mode.MyContext;
+import com.ichat.util.MyContext;
+import com.ichat.util.Out;
+
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Looper;
@@ -25,12 +27,13 @@ public class Login extends Activity {
 	private EditText mPassword; // ÃÜÂë±à¼­¿ò
 	ConnectionConfiguration config;
 	XMPPConnection conn=null;
-	MyContext context;
+	private MyContext myContext;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.login);
+		myContext=(MyContext) getApplication();
 		init();
 	}
 
@@ -55,6 +58,7 @@ public class Login extends Activity {
 					Looper.prepare();
 					login_commit(username, pwd);
 					Looper.loop();
+					Looper.myLooper().quit();
 				}
 			}).start();
 		}
@@ -65,7 +69,7 @@ public class Login extends Activity {
 		config.setSASLAuthenticationEnabled(false);
 		config.setReconnectionAllowed(true);
 		config.setSendPresence(false);
-		conn=(MyContext.getInstance().getConn()==null?new XMPPConnection(config):MyContext.getInstance().getConn());
+		conn=(myContext.getConn()==null?new XMPPConnection(config):myContext.getConn());
 		try {
 			conn.connect();
 		} catch (XMPPException e) {
@@ -92,8 +96,8 @@ public class Login extends Activity {
 					.create().show();
 			return;
 		}
-		MyContext.getInstance().setConn(conn);
-		MyContext.getInstance().setUserName(mUser.getText().toString().trim());
+		myContext.setConn(conn);
+		myContext.setUserName(mUser.getText().toString().trim());
 		Intent intent=new Intent();
 		intent.setClass(Login.this,MainChat.class);
 		startActivity(intent);

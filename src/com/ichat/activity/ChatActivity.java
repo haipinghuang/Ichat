@@ -22,12 +22,13 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.ichat.adaper.ChatMsgViewAdapter;
+import com.ichat.config.MyConfig;
 import com.ichat.dao.ChatDao;
 import com.ichat.mode.ChatMsgEntity;
 import com.ichat.mode.Entry;
-import com.ichat.mode.MyContext;
 import com.ichat.util.ChatUtil;
 import com.ichat.util.Date;
+import com.ichat.util.MyContext;
 import com.ichat.util.Out;
 
 public class ChatActivity extends Activity implements OnClickListener {
@@ -47,17 +48,18 @@ public class ChatActivity extends Activity implements OnClickListener {
 	private ChatMsgEntity chatMsg_rec ;
 	private MyMessageListener myMessageListenern=new MyMessageListener();
 	private List<ChatMsgEntity> msgList = new ArrayList<ChatMsgEntity>();
-	private ChatMsgEntity lastMsg=null;
+	private MyContext myContext;
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.chat_view);
+		myContext=(MyContext) getApplication();
 		// 启动activity时不自动弹出软键盘
 		getWindow().setSoftInputMode(
 				WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
 		initView();
 		entry = (Entry) this.getIntent().getExtras().getSerializable("entry");
-		List<Chat> chatList=MyContext.getInstance().getChatList();
+		List<Chat> chatList=myContext.getChatList();
 		for(Chat ch:chatList){
 			if(ChatUtil.getPartnerName(ch).equals(entry.getPartner())){
 				Iterator<MessageListener> it= ch.getListeners().iterator();
@@ -70,12 +72,12 @@ public class ChatActivity extends Activity implements OnClickListener {
 			}
 		}
 		if(chat==null){
-			chat=MyContext.getInstance().getChatManager().createChat(entry.getUserJID(), myMessageListenern);
+			chat=myContext.getChatManager().createChat(entry.getUserJID(), myMessageListenern);
 			Out.println("chat == null");
 		}else{
 			chat.addMessageListener(myMessageListenern);
 		}
-		MyContext.getInstance().getChatList().add(chat);
+		myContext.getChatList().add(chat);
 		msgList.addAll(chatDao.find(ChatUtil.getPartnerName(chat)));
 		mAdapter = new ChatMsgViewAdapter(this, msgList);
 		mListView.setAdapter(mAdapter);
@@ -89,9 +91,7 @@ public class ChatActivity extends Activity implements OnClickListener {
 		public void processMessage(final Chat chat, Message arg1) {
 			chatMsg_rec= new ChatMsgEntity(Date.getDate(),
 					 true,true,partner,arg1.getBody(),null);
-			lastMsg=chatMsg_rec;
-			MyContext.getInstance().setLastMsg(lastMsg);
-			lastMsg=null;
+			sendBroadcast(chatMsg_rec);
 			runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
@@ -125,9 +125,7 @@ public class ChatActivity extends Activity implements OnClickListener {
 				e.printStackTrace();
 			}
 			chatMsg_send = new ChatMsgEntity( Date.getDate(), false,true,partner, content_send,null);
-			lastMsg=chatMsg_send;
-			MyContext.getInstance().setLastMsg(lastMsg);
-			lastMsg=null;
+			sendBroadcast(chatMsg_send);
 			chatDao.add(chatMsg_send);
 			msgList.add(chatMsg_send);
 			mAdapter.notifyDataSetChanged();
@@ -136,6 +134,14 @@ public class ChatActivity extends Activity implements OnClickListener {
 			content_send = null;
 			mListView.setSelection(mListView.getCount() - 1);
 		}
+	}
+
+	private void sendBroadcast(ChatMsgEntity msg) {
+		Intent intent=new Intent(MyConfig.action);
+		Bundle bundle=new Bundle();
+		bundle.putSerializable("msg", msg);
+		intent.putExtras(bundle);
+		sendBroadcast(intent);
 	}
 
 	@Override
@@ -156,10 +162,10 @@ public class ChatActivity extends Activity implements OnClickListener {
 		Intent intent = new Intent(ChatActivity.this, InfoXiaohei.class);
 		startActivity(intent);
 	}
-//	protected void onDestroy() {
-//		super.onDestroy();
-//		Out.println("onDestroy");
-//	}
+	protected void onDestroy() {
+		super.onDestroy();
+		Out.println("ct__onDestroy");
+	}
 //	@Override
 //	protected void onStart() {
 //		super.onStart();
@@ -182,9 +188,9 @@ public class ChatActivity extends Activity implements OnClickListener {
 //		Out.println("onPause");
 //	}
 //	@Override
-//	protected void onStop() {
-//		super.onStop();
-//		Out.println("onStop");
-//	}
+	protected void onStop() {
+		super.onStop();
+		Out.println("ct__onStop");
+	}
 
 }
