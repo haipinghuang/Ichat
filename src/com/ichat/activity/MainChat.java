@@ -2,7 +2,6 @@ package com.ichat.activity;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
 import org.jivesoftware.smack.Chat;
@@ -15,17 +14,16 @@ import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smackx.OfflineMessageManager;
-import org.jivesoftware.smackx.packet.MUCOwner.Destroy;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
-import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.DialogInterface.OnClickListener;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.view.PagerAdapter;
@@ -50,7 +48,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.PopupWindow;
-
 import com.ichat.adaper.ExpandListViewAdapter;
 import com.ichat.adaper.SessionsAdapter;
 import com.ichat.config.MyConfig;
@@ -141,44 +138,42 @@ public class MainChat extends Activity {
 
 	// 监听好友变动
 	private void addRosterListerer() {
-		myContext.getRoster()
-				.addRosterListener(new RosterListener() {
+		myContext.getRoster().addRosterListener(new RosterListener() {
 
-					@Override
-					public void presenceChanged(Presence arg0) {
-						expandListDataChanged();
-					}
+			@Override
+			public void presenceChanged(Presence arg0) {
+				expandListDataChanged();
+			}
 
-					@Override
-					public void entriesUpdated(Collection<String> arg0) {
-						expandListDataChanged();
-					}
+			@Override
+			public void entriesUpdated(Collection<String> arg0) {
+				expandListDataChanged();
+			}
 
-					@Override
-					public void entriesDeleted(Collection<String> arg0) {
-						expandListDataChanged();
-						Out.println("entriesDeleted");
-					}
+			@Override
+			public void entriesDeleted(Collection<String> arg0) {
+				expandListDataChanged();
+				Out.println("entriesDeleted");
+			}
 
-					private void expandListDataChanged() {
-						runOnUiThread(new Runnable() {
-							@Override
-							public void run() {
-								// myContext.getRoster().reload();
-								groupData.clear();
-								groupData.addAll(myContext
-										.getRoster().getGroups());
-								expandListAdapter.notifyDataSetChanged();
-							}
-						});
+			@Override
+			public void entriesAdded(Collection<String> arg0) {
+				expandListDataChanged();
+			}
+		});
+	}
 
-					}
+	private void expandListDataChanged() {
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				// myContext.getRoster().reload();
+				groupData.clear();
+				groupData.addAll(myContext.getRoster().getGroups());
+				expandListAdapter.notifyDataSetChanged();
+			}
+		});
 
-					@Override
-					public void entriesAdded(Collection<String> arg0) {
-						expandListDataChanged();
-					}
-				});
 	}
 
 	private void receiveOffLineMsg() {
@@ -207,65 +202,62 @@ public class MainChat extends Activity {
 
 	}
 
+	public void addGroupChangeListener() {
+	}
+
 	/**
 	 * 创建chat监听器
 	 */
 	private void addChatListener() {
-		myContext.getChatManager()
-				.addChatListener(new ChatManagerListener() {
+		myContext.getChatManager().addChatListener(new ChatManagerListener() {
 
-					@Override
-					public void chatCreated(Chat chat, boolean createdLocally) {
+			@Override
+			public void chatCreated(Chat chat, boolean createdLocally) {
 
-						Out.println("main thread " + chat.getThreadID());
-						/**
-						 * 判断Chat是否由用户主动创建
-						 */
-						if (!createdLocally) {
-							myContext.getChatList().add(chat);
-							chat.addMessageListener(new MessageListener() {
+				Out.println("main thread " + chat.getThreadID());
+				/**
+				 * 判断Chat是否由用户主动创建
+				 */
+				if (!createdLocally) {
+					myContext.getChatList().add(chat);
+					chat.addMessageListener(new MessageListener() {
+						@Override
+						public void processMessage(final Chat chat,
+								final Message message) {
+							runOnUiThread(new Runnable() {
 								@Override
-								public void processMessage(final Chat chat,
-										final Message message) {
-									runOnUiThread(new Runnable() {
-										@Override
-										public void run() {
-											ChatMsgEntity recMsg = new ChatMsgEntity(
-													Date.getDate(),
-													true,
-													false,
-													ChatUtil.getPartnerName(chat),
-													message.getBody(), null);
-											chatDao.add(recMsg);
-											session = new Session(ChatUtil
-													.getPartnerName(chat),
-													message.getBody(), Date
-															.getDate());
-											/*
-											 * 更新会话
-											 */
-											for (Session s : sessionList) {
-												if (s.getName()
-														.equals(ChatUtil
-																.getPartnerName(chat))) {
-													sessionList.remove(s);
-													break;
-												}
-											}
-											sessionList.add(session);
-											sessionsAdapter
-													.notifyDataSetChanged();
-											session_lv.setSelection(session_lv
-													.getCount() - 1);
+								public void run() {
+									ChatMsgEntity recMsg = new ChatMsgEntity(
+											Date.getDate(), true, false,
+											ChatUtil.getPartnerName(chat),
+											message.getBody(), null);
+									chatDao.add(recMsg);
+									session = new Session(ChatUtil
+											.getPartnerName(chat), message
+											.getBody(), Date.getDate());
+									/*
+									 * 更新会话
+									 */
+									for (Session s : sessionList) {
+										if (s.getName().equals(
+												ChatUtil.getPartnerName(chat))) {
+											sessionList.remove(s);
+											break;
 										}
-									});
+									}
+									sessionList.add(session);
+									sessionsAdapter.notifyDataSetChanged();
+									session_lv.setSelection(session_lv
+											.getCount() - 1);
 								}
 							});
-						} else {
-							Out.println("--createdLocally---");
 						}
-					}
-				});
+					});
+				} else {
+					Out.println("--createdLocally---");
+				}
+			}
+		});
 	}
 
 	public class SessionItemClickListener implements OnItemClickListener {
@@ -277,15 +269,14 @@ public class MainChat extends Activity {
 			bundle = new Bundle();
 			intent.setClass(MainChat.this, ChatActivity.class);
 			RosterEntry tEntry = null;
-			for (RosterEntry entry : myContext.getRoster()
-					.getEntries()) {
+			for (RosterEntry entry : myContext.getRoster().getEntries()) {
 				if (entry.getName().equals(sessionList.get(position).getName())) {
 					tEntry = entry;
 					break;
 				}
 			}
-			Entry entry = new Entry(tEntry.getName(),
-					getPresence(tEntry), tEntry.getUser());
+			Entry entry = new Entry(tEntry.getName(), getPresence(tEntry),
+					tEntry.getUser());
 			bundle.putSerializable("entry", entry);
 			intent.putExtras(bundle);
 			startActivity(intent);
@@ -294,7 +285,7 @@ public class MainChat extends Activity {
 
 	private void init() {
 		instance = this;
-		myContext=(MyContext) getApplication();
+		myContext = (MyContext) getApplication();
 		mTabPager = (ViewPager) findViewById(R.id.tabpager);
 		mTabPager.setOnPageChangeListener(new MyOnPageChangeListener());
 		mTab1 = (ImageView) findViewById(R.id.img_weixin);
@@ -494,25 +485,34 @@ public class MainChat extends Activity {
 		return false;
 	}
 
-	// 设置标题栏右侧按钮的作用
-	public void btnmainright(View v) {
-		Intent intent = new Intent(MainChat.this, MainTopRightDialog.class);
-		startActivity(intent);
-	}
-
 	// 点击了添加好友按钮
 	public void addFriend(View v) {
 		Intent intent = new Intent(MainChat.this, SearchFriend.class);
 		startActivity(intent);
 	}
 
-	/*
-	 * public void onClick(View v) { Intent intent = null; switch (v.getId()) {
-	 * case R.id.btn_shake:// 手机摇一摇 intent = new Intent(MainChat.this,
-	 * ShakeActivity.class); startActivity(intent); break; case
-	 * R.id.exit_settings: intent = new Intent(MainChat.this,
-	 * ExitFromSettings.class); startActivity(intent); break; } }
-	 */
+	// 设置标题栏右侧按钮的作用
+	public void btnmainright(View v) {
+		Intent intent = new Intent(MainChat.this, MainTopRightDialog.class);
+		startActivity(intent);
+	}
+
+	public void startchat(View v) { // 小黑 对话界面
+		Intent intent = new Intent(MainChat.this, ChatActivity.class);
+		startActivity(intent);
+	}
+
+	public void btn_shake(View v) { // 手机摇一摇
+		Intent intent = new Intent(MainChat.this, ShakeActivity.class);
+		startActivity(intent);
+	}
+
+	// 退出 伪“对话框”，其实是一个activity
+	public void exit_settings(View v) {
+		Intent intent = new Intent(MainChat.this, ExitFromSettings.class);
+		startActivity(intent);
+	}
+
 	public class MyBroadcastReceiver extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
@@ -604,9 +604,10 @@ public class MainChat extends Activity {
 									childData.addAll(groupData.get(
 											groupPosition).getEntries());
 									entry = childData.get(childPosition);
-									Intent intent=new Intent();
+									Intent intent = new Intent();
 									intent.putExtra("user", entry.getUser());
-									intent.setClass(MainChat.this,FriendInfo.class);
+									intent.setClass(MainChat.this,
+											FriendInfo.class);
 									startActivity(intent);
 									break;
 								case 1:
@@ -648,16 +649,39 @@ public class MainChat extends Activity {
 
 								}).create().show();
 			} else {
-
+				new Builder(MainChat.this)
+						.setPositiveButton("分组管理", new OnClickListener() {
+							@Override
+							public void onClick(DialogInterface dialog,
+									int which) {
+								Intent intent = new Intent(MainChat.this,
+										GroupManage.class);
+								startActivityForResult(intent, 1);
+								dialog.cancel();
+							}
+						}).create().show();
 			}
 			return false;
 		}
 	}
-	public String getPresence(RosterEntry re){
-		boolean presence=myContext.getRoster().getPresence(re.getUser()).isAvailable();
-		if(presence){
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		// 只要 是从分组管理返回的，就更新数据
+		if (requestCode == 1) {
+			boolean flag = data.getExtras().getBoolean("groupChanged");
+			if (flag) {
+				expandListDataChanged();
+			}
+		}
+	}
+
+	public String getPresence(RosterEntry re) {
+		boolean presence = myContext.getRoster().getPresence(re.getUser())
+				.isAvailable();
+		if (presence) {
 			return myContext.getRoster().getPresence(re.getUser()).getStatus();
-		}else{
+		} else {
 			return new String("离线");
 		}
 	}
