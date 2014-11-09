@@ -3,12 +3,13 @@ package com.ichat.activity;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.ConnectionConfiguration.SecurityMode;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Presence.Type;
 import org.jivesoftware.smackx.pubsub.PresenceState;
 
 import com.ichat.config.MyConfig;
-import com.ichat.util.MyContext;
+import com.ichat.context.MyContext;
 import com.ichat.util.Out;
 
 import android.net.Uri;
@@ -69,6 +70,7 @@ public class Login extends Activity {
 		config.setSASLAuthenticationEnabled(false);
 		config.setReconnectionAllowed(true);
 		config.setSendPresence(false);
+		config.setSecurityMode(SecurityMode.disabled);
 		conn=(myContext.getConn()==null?new XMPPConnection(config):myContext.getConn());
 		try {
 			conn.connect();
@@ -97,6 +99,9 @@ public class Login extends Activity {
 			return;
 		}
 		myContext.setConn(conn);
+		
+//		Presence presences = new Presence(Presence.Type.unavailable);
+//		myContext.getConn().sendPacket(presences);
 		myContext.setUserName(mUser.getText().toString().trim());
 		Intent intent=new Intent();
 		intent.setClass(Login.this,MainChat.class);

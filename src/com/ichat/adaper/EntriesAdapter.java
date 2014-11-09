@@ -15,7 +15,7 @@ import android.widget.TextView;
 
 import com.ichat.activity.MainChat;
 import com.ichat.activity.R;
-import com.ichat.util.MyContext;
+import com.ichat.context.MyContext;
 
 public class EntriesAdapter extends BaseAdapter {
 	private List<RosterEntry> entryList;

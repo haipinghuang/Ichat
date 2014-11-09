@@ -27,8 +27,8 @@
         android:layout_marginTop="14dp"
         android:background="@drawable/preference_single_item"
         android:clickable="true"
-        android:onClick="addFriend"
-        android:gravity="center_vertical" >
+        android:gravity="center_vertical"
+        android:onClick="addFriend" >
 
         <ImageView
             android:id="@+id/add_friend"
@@ -65,10 +65,11 @@
         android:layout_marginTop="14dp"
         android:background="@drawable/preference_single_item"
         android:clickable="true"
+        android:onClick="roomManager"
         android:gravity="center_vertical" >
 
         <ImageView
-            android:id="@+id/add_friend_shake"
+            android:id="@+id/image"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
@@ -80,9 +81,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
-            android:layout_toRightOf="@id/add_friend_shake"
+            android:layout_toRightOf="@id/image"
             android:padding="8dp"
-            android:text="摇一摇"
+            android:text="群组管理"
             android:textColor="#000"
             android:textSize="17sp" />
 

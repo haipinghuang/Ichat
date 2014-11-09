@@ -7,11 +7,15 @@ import java.util.List;
 import org.jivesoftware.smack.Chat;
 import org.jivesoftware.smack.ChatManagerListener;
 import org.jivesoftware.smack.MessageListener;
+import org.jivesoftware.smack.PacketListener;
+import org.jivesoftware.smack.Roster.SubscriptionMode;
 import org.jivesoftware.smack.RosterEntry;
 import org.jivesoftware.smack.RosterGroup;
 import org.jivesoftware.smack.RosterListener;
 import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smackx.OfflineMessageManager;
 
@@ -21,9 +25,9 @@ import android.app.AlertDialog.Builder;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.DialogInterface.OnClickListener;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.view.PagerAdapter;
@@ -48,16 +52,17 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.PopupWindow;
+
 import com.ichat.adaper.ExpandListViewAdapter;
 import com.ichat.adaper.SessionsAdapter;
 import com.ichat.config.MyConfig;
+import com.ichat.context.MyContext;
 import com.ichat.dao.ChatDao;
 import com.ichat.mode.ChatMsgEntity;
 import com.ichat.mode.Entry;
 import com.ichat.mode.Session;
 import com.ichat.util.ChatUtil;
 import com.ichat.util.Date;
-import com.ichat.util.MyContext;
 import com.ichat.util.Out;
 
 /**
@@ -111,7 +116,6 @@ public class MainChat extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main_chat);
-		// 启动activity时不自动弹出软键盘
 		init();
 		addChatListener();
 		groupData.addAll(myContext.getRoster().getGroups());
@@ -134,6 +138,39 @@ public class MainChat extends Activity {
 
 		receiveOffLineMsg();
 		addRosterListerer();
+		addPacketListener();
+
+	}
+
+	/**
+	 * 添加包监听器
+	 */
+	private void addPacketListener() {
+		myContext.getRoster().setSubscriptionMode(SubscriptionMode.manual);
+		myContext.getConn().addPacketListener(new PacketListener() {
+			@Override
+			public void processPacket(Packet packet) {
+				String from = packet.getFrom();
+				session = new Session("好友添加请求...", "来自于" + from,
+						Date.getDate(), packet);
+				sessionList.add(session);
+				handler.sendMessage(new android.os.Message());
+			}
+		}, new PacketFilter() {
+			@Override
+			public boolean accept(Packet packet) {
+				if(!(packet instanceof Presence)){
+					return false;
+				}
+				Presence presence = (Presence) packet;
+				if (presence.getType().equals(Presence.Type.subscribe)){
+					Out.println("Presence.Type "+presence.getType().toString());
+					return true;
+				}
+				return false;
+			}
+
+		});
 	}
 
 	// 监听好友变动
@@ -153,7 +190,6 @@ public class MainChat extends Activity {
 			@Override
 			public void entriesDeleted(Collection<String> arg0) {
 				expandListDataChanged();
-				Out.println("entriesDeleted");
 			}
 
 			@Override
@@ -163,6 +199,9 @@ public class MainChat extends Activity {
 		});
 	}
 
+	/**
+	 * 用户的好友列表发生了变化
+	 */
 	private void expandListDataChanged() {
 		runOnUiThread(new Runnable() {
 			@Override
@@ -195,14 +234,15 @@ public class MainChat extends Activity {
 					Log.e("MsgError", "删除已获取的离线信息失败");
 					e.printStackTrace();
 				}
-				Presence presences = new Presence(Presence.Type.available);
-				myContext.getConn().sendPacket(presences);
+				Out.println("is sendPresence "
+						+ myContext.getConn().isSendPresence());
+				Presence presence = new Presence(Presence.Type.available);
+				myContext.getConn().sendPacket(presence);
+				Out.println("is sendPresence "
+						+ myContext.getConn().isSendPresence());
 			}
 		}).start();
 
-	}
-
-	public void addGroupChangeListener() {
 	}
 
 	/**
@@ -246,9 +286,7 @@ public class MainChat extends Activity {
 										}
 									}
 									sessionList.add(session);
-									sessionsAdapter.notifyDataSetChanged();
-									session_lv.setSelection(session_lv
-											.getCount() - 1);
+									handler.sendMessage(new android.os.Message());
 								}
 							});
 						}
@@ -263,23 +301,76 @@ public class MainChat extends Activity {
 	public class SessionItemClickListener implements OnItemClickListener {
 
 		@Override
-		public void onItemClick(AdapterView<?> parent, View view, int position,
-				long id) {
-			Intent intent = new Intent();
-			bundle = new Bundle();
-			intent.setClass(MainChat.this, ChatActivity.class);
-			RosterEntry tEntry = null;
-			for (RosterEntry entry : myContext.getRoster().getEntries()) {
-				if (entry.getName().equals(sessionList.get(position).getName())) {
-					tEntry = entry;
-					break;
+		public void onItemClick(AdapterView<?> parent, View view,
+				final int position, long id) {
+			if (sessionList.get(position).getPacket() == null) {
+				Intent intent = new Intent();
+				bundle = new Bundle();
+				intent.setClass(MainChat.this, ChatActivity.class);
+				RosterEntry tEntry = null;
+				
+				Out.println("Position："+position+"session:"+sessionList.get(position));
+				
+				for (RosterEntry entry : myContext.getRoster().getEntries()) {
+					if (entry.getName().equals(
+							sessionList.get(position).getName())) {
+						tEntry = entry;
+						break;
+					}
 				}
+				Entry entry = new Entry(tEntry.getName(), getPresence(tEntry),
+						tEntry.getUser());
+				bundle.putSerializable("entry", entry);
+				intent.putExtras(bundle);
+				startActivity(intent);
+			} else {
+				// 收到好友添加请求
+				final Packet packet = sessionList.get(position).getPacket();
+				String[] items = new String[] { "同意", "拒绝", "同意并添加对方为好友" };
+				new Builder(MainChat.this)
+						.setItems(items, new OnClickListener() {
+							@Override
+							public void onClick(DialogInterface dialog,
+									int which) {
+								Presence presence = null;
+								switch (which) {
+								case 0:
+									presence = new Presence(
+											Presence.Type.subscribed);
+									sendPacket(position, packet, presence);
+									break;
+								case 1:
+									presence = new Presence(
+											Presence.Type.unsubscribed);
+									sendPacket(position, packet, presence);
+									break;
+								case 2:
+									Intent intent = new Intent(MainChat.this,
+											HandlerRequest.class);
+									Bundle bundle = new Bundle();
+									bundle.putString("packetID",
+											packet.getPacketID());
+									bundle.putString("from", packet.getFrom());
+									bundle.putString("to", packet.getTo());
+									intent.putExtras(bundle);
+									startActivity(intent);
+									sessionList.remove(position);
+									handler.sendMessage(new android.os.Message());
+									break;
+								}
+							}
+
+							private void sendPacket(final int position,
+									final Packet packet, Presence presence) {
+								presence.setPacketID(packet.getPacketID());
+								presence.setFrom(packet.getTo());
+								presence.setTo(packet.getFrom());
+								myContext.getConn().sendPacket(presence);
+								sessionList.remove(position);
+								handler.sendMessage(new android.os.Message());
+							}
+						}).create().show();
 			}
-			Entry entry = new Entry(tEntry.getName(), getPresence(tEntry),
-					tEntry.getUser());
-			bundle.putSerializable("entry", entry);
-			intent.putExtras(bundle);
-			startActivity(intent);
 		}
 	}
 
@@ -297,6 +388,7 @@ public class MainChat extends Activity {
 		mTab2.setOnClickListener(new MyOnClickListener(1));
 		mTab3.setOnClickListener(new MyOnClickListener(2));
 		mTab4.setOnClickListener(new MyOnClickListener(3));
+		// 启动activity时不自动弹出软键盘
 		getWindow().setSoftInputMode(
 				WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
 		Display currDisplay = getWindowManager().getDefaultDisplay();// 获取屏幕当前分辨率
@@ -496,9 +588,9 @@ public class MainChat extends Activity {
 		Intent intent = new Intent(MainChat.this, MainTopRightDialog.class);
 		startActivity(intent);
 	}
-
-	public void startchat(View v) { // 小黑 对话界面
-		Intent intent = new Intent(MainChat.this, ChatActivity.class);
+	// 打开聊天窗口
+	public void roomManager(View v) { 
+		Intent intent = new Intent(MainChat.this, RoomManager.class);
 		startActivity(intent);
 	}
 
@@ -592,7 +684,7 @@ public class MainChat extends Activity {
 			if (childPosition != -1) {
 				Builder dialog = new AlertDialog.Builder(MainChat.this);
 				dialog.setTitle("好友操作");
-				dialog.setItems(new String[] { "查看资料", "删除好友", "移至分组", },
+				dialog.setItems(new String[] { "查看资料", "删除好友", "移动分组", },
 						new DialogInterface.OnClickListener() {
 							@Override
 							public void onClick(DialogInterface dialog,
@@ -626,15 +718,14 @@ public class MainChat extends Activity {
 									break;
 								case 2:
 									// 改变分组暂没实现
-									// childData.addAll(groupData.get(
-									// groupPosition).getEntries());
-									// entry = childData.get(childPosition);
-									// Intent intent=new Intent();
-									// intent.putExtra("group", groupPosition);
-									// startActivityForResult(intent,
-									// groupChanged);
+									intent = new Intent(MainChat.this,
+											ChangeGroup.class);
+									intent.putExtra("groupPosition",
+											groupPosition);
+									intent.putExtra("childPosition",
+											childPosition);
+									startActivity(intent);
 									break;
-								default:
 								}
 							}
 						})

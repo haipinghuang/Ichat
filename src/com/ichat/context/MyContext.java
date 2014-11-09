@@ -1,4 +1,4 @@
-package com.ichat.util;
+package com.ichat.context;
 
 import java.util.ArrayList;
 import java.util.List;

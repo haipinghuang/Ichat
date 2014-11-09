@@ -23,12 +23,12 @@ import android.widget.TextView;
 
 import com.ichat.adaper.ChatMsgViewAdapter;
 import com.ichat.config.MyConfig;
+import com.ichat.context.MyContext;
 import com.ichat.dao.ChatDao;
 import com.ichat.mode.ChatMsgEntity;
 import com.ichat.mode.Entry;
 import com.ichat.util.ChatUtil;
 import com.ichat.util.Date;
-import com.ichat.util.MyContext;
 import com.ichat.util.Out;
 
 public class ChatActivity extends Activity implements OnClickListener {
@@ -73,7 +73,6 @@ public class ChatActivity extends Activity implements OnClickListener {
 		}
 		if(chat==null){
 			chat=myContext.getChatManager().createChat(entry.getUserJID(), myMessageListenern);
-			Out.println("chat == null");
 		}else{
 			chat.addMessageListener(myMessageListenern);
 		}

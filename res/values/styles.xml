@@ -22,12 +22,19 @@
 	</style>	 
 	<style name="AnimFade2" parent="@android:style/Animation.Activity">
         <item name="android:activityOpenEnterAnimation">@anim/slide_in_from_right</item>
-        <item name="android:activityOpenExitAnimation">@anim/slide_out_to_left</item>
-        <item name="android:activityCloseEnterAnimation">@anim/slide_in_from_left</item>
+       <!--  <item name="android:activityOpenExitAnimation">@anim/slide_out_to_left</item>
+        <item name="android:activityCloseEnterAnimation">@anim/slide_in_from_left</item> -->
         <item name="android:activityCloseExitAnimation">@anim/slide_out_to_right</item>
     </style>
 	<style name="horizontal_slide" parent="@android:style/Theme.NoTitleBar">
         <item name="android:windowAnimationStyle">@style/AnimFade2</item>
+    </style>
+    <style name="vertical_push" parent="@android:style/Theme.NoTitleBar">
+		<item name="android:windowAnimationStyle">@style/AnimPush</item>   
+    </style>
+    <style name="AnimPush" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@anim/pop_bottom_in</item>
+        <item name="android:activityCloseExitAnimation">@anim/pop_top_out</item>
     </style>
 	<style name="chat_text_name_style">  
 		<item name="android:textColor">#818181</item>   

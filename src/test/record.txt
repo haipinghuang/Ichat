@@ -6,6 +6,8 @@ Login.java 中第65行有错，程序第二次运行时会报MyContext.getInstance()==null------
 
 接受的离线消息获取不到发送似的时间；
 
+点击接受的临时回话会报空指针异常
+
 程序按了back键，此chatactivity就会destroy,但创建的chat不会消失，还会接受消息
 	有时间改进下会话的更新方法{
 		用内容提供者发送通知，
@@ -22,6 +24,12 @@ Login.java 中第65行有错，程序第二次运行时会报MyContext.getInstance()==null------
 
 
 -------------------------注意---------------------------
+	1，注册用户名不能包含字符：@ /,等特殊字符；
+	2.spark客户端关闭聊天窗口是会发送一个空内容的消息给android客户端
+	3,连接断开不会重连！
+	4,删除分组中的第一个用户会报10-29 03:13:28.578: E/AndroidRuntime(1490): java.lang.IndexOutOfBoundsException: Invalid index 1, size is 1
+	
+
 从MainChat 到 ChatActivity；mainchat会经理 pause-stop，
 此时从chatactivity到mainchat，mainchat经理restart-start-resume；
 

@@ -1,6 +1,6 @@
 package com.ichat.activity;
 
-import com.ichat.util.MyContext;
+import com.ichat.context.MyContext;
 
 import android.app.Activity;
 import android.content.Intent;
