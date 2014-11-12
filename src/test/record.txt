@@ -16,25 +16,107 @@ Login.java 中第65行有错，程序第二次运行时会报MyContext.getInstance()==null------
 	}														------------已解决
 
 
-
-
-
-
-
-
-
 -------------------------注意---------------------------
 	1，注册用户名不能包含字符：@ /,等特殊字符；
 	2.spark客户端关闭聊天窗口是会发送一个空内容的消息给android客户端
 	3,连接断开不会重连！
 	4,删除分组中的第一个用户会报10-29 03:13:28.578: E/AndroidRuntime(1490): java.lang.IndexOutOfBoundsException: Invalid index 1, size is 1
 	
-
-从MainChat 到 ChatActivity；mainchat会经理 pause-stop，
-此时从chatactivity到mainchat，mainchat经理restart-start-resume；
-
-程序进入了chatActivity,mainchat就不能监听新chat；意即mainchat的监听器会失效
-
 在chatActivity界面按back键和按屏幕返回键都会执行stop--destroy；
 	
 chatActivity中得到的chat都会经过移除已经存在的listener；
+
+public void configure(ProviderManager pm) {
+
+    //  Private Data Storage
+    pm.addIQProvider("query","jabber:iq:private", new PrivateDataManager.PrivateDataIQProvider());
+
+    //  Time
+    try {
+        pm.addIQProvider("query","jabber:iq:time", Class.forName("org.jivesoftware.smackx.packet.Time"));
+    } catch (ClassNotFoundException e) {
+        Log.w("TestClient", "Can't load class for org.jivesoftware.smackx.packet.Time");
+    }
+
+    //  Roster Exchange
+    pm.addExtensionProvider("x","jabber:x:roster", new RosterExchangeProvider());
+
+    //  Message Events
+    pm.addExtensionProvider("x","jabber:x:event", new MessageEventProvider());
+
+    //  Chat State
+    pm.addExtensionProvider("active","http://jabber.org/protocol/chatstates", new ChatStateExtension.Provider());
+    pm.addExtensionProvider("composing","http://jabber.org/protocol/chatstates", new ChatStateExtension.Provider()); 
+    pm.addExtensionProvider("paused","http://jabber.org/protocol/chatstates", new ChatStateExtension.Provider());
+    pm.addExtensionProvider("inactive","http://jabber.org/protocol/chatstates", new ChatStateExtension.Provider());
+    pm.addExtensionProvider("gone","http://jabber.org/protocol/chatstates", new ChatStateExtension.Provider());
+
+    //  XHTML
+    pm.addExtensionProvider("html","http://jabber.org/protocol/xhtml-im", new XHTMLExtensionProvider());
+
+    //  Group Chat Invitations
+    pm.addExtensionProvider("x","jabber:x:conference", new GroupChatInvitation.Provider());
+
+    //  Service Discovery # Items    
+    pm.addIQProvider("query","http://jabber.org/protocol/disco#items", new DiscoverItemsProvider());
+
+    //  Service Discovery # Info
+    pm.addIQProvider("query","http://jabber.org/protocol/disco#info", new DiscoverInfoProvider());
+
+    //  Data Forms
+    pm.addExtensionProvider("x","jabber:x:data", new DataFormProvider());
+
+    //  MUC User
+    pm.addExtensionProvider("x","http://jabber.org/protocol/muc#user", new MUCUserProvider());
+
+    //  MUC Admin    
+    pm.addIQProvider("query","http://jabber.org/protocol/muc#admin", new MUCAdminProvider());
+
+    //  MUC Owner    
+    pm.addIQProvider("query","http://jabber.org/protocol/muc#owner", new MUCOwnerProvider());
+
+    //  Delayed Delivery
+    pm.addExtensionProvider("x","jabber:x:delay", new DelayInformationProvider());
+
+    //  Version
+    try {
+        pm.addIQProvider("query","jabber:iq:version", Class.forName("org.jivesoftware.smackx.packet.Version"));
+    } catch (ClassNotFoundException e) {
+        //  Not sure what's happening here.
+    }
+
+    //  VCard
+    pm.addIQProvider("vCard","vcard-temp", new VCardProvider());
+
+    //  Offline Message Requests
+    pm.addIQProvider("offline","http://jabber.org/protocol/offline", new OfflineMessageRequest.Provider());
+
+    //  Offline Message Indicator
+    pm.addExtensionProvider("offline","http://jabber.org/protocol/offline", new OfflineMessageInfo.Provider());
+
+    //  Last Activity
+    pm.addIQProvider("query","jabber:iq:last", new LastActivity.Provider());
+
+    //  User Search
+    pm.addIQProvider("query","jabber:iq:search", new UserSearch.Provider());
+
+    //  SharedGroupsInfo
+    pm.addIQProvider("sharedgroup","http://www.jivesoftware.org/protocol/sharedgroup", new SharedGroupsInfo.Provider());
+
+    //  JEP-33: Extended Stanza Addressing
+    pm.addExtensionProvider("addresses","http://jabber.org/protocol/address", new MultipleAddressesProvider());
+
+    //   FileTransfer
+    pm.addIQProvider("si","http://jabber.org/protocol/si", new StreamInitiationProvider());
+
+    pm.addIQProvider("query","http://jabber.org/protocol/bytestreams", new BytestreamsProvider());
+
+    //  Privacy
+    pm.addIQProvider("query","jabber:iq:privacy", new PrivacyProvider());
+    pm.addIQProvider("command", "http://jabber.org/protocol/commands", new AdHocCommandDataProvider());
+    pm.addExtensionProvider("malformed-action", "http://jabber.org/protocol/commands", new AdHocCommandDataProvider.MalformedActionError());
+    pm.addExtensionProvider("bad-locale", "http://jabber.org/protocol/commands", new AdHocCommandDataProvider.BadLocaleError());
+    pm.addExtensionProvider("bad-payload", "http://jabber.org/protocol/commands", new AdHocCommandDataProvider.BadPayloadError());
+    pm.addExtensionProvider("bad-sessionid", "http://jabber.org/protocol/commands", new AdHocCommandDataProvider.BadSessionIDError());
+    pm.addExtensionProvider("session-expired", "http://jabber.org/protocol/commands", new AdHocCommandDataProvider.SessionExpiredError());
+}

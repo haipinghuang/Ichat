@@ -88,6 +88,9 @@
         <activity
             android:name=".RoomInfo"
             android:theme="@style/horizontal_slide" />
+        <activity
+            android:name=".FriendAdd"
+            android:theme="@style/horizontal_slide" />
     </application>
 
 </manifest>

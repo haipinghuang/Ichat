@@ -8,6 +8,7 @@ import org.jivesoftware.smack.Chat;
 import org.jivesoftware.smack.ChatManagerListener;
 import org.jivesoftware.smack.MessageListener;
 import org.jivesoftware.smack.PacketListener;
+import org.jivesoftware.smack.SmackAndroid;
 import org.jivesoftware.smack.Roster.SubscriptionMode;
 import org.jivesoftware.smack.RosterEntry;
 import org.jivesoftware.smack.RosterGroup;
@@ -17,7 +18,12 @@ import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.provider.ProviderManager;
+import org.jivesoftware.smackx.GroupChatInvitation;
 import org.jivesoftware.smackx.OfflineMessageManager;
+import org.jivesoftware.smackx.provider.DiscoverInfoProvider;
+import org.jivesoftware.smackx.provider.DiscoverItemsProvider;
+import org.jivesoftware.smackx.search.UserSearch;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -64,7 +70,6 @@ import com.ichat.mode.Session;
 import com.ichat.util.ChatUtil;
 import com.ichat.util.Date;
 import com.ichat.util.Out;
-
 /**
  * 登录成功后的主界面
  * 
@@ -117,6 +122,7 @@ public class MainChat extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main_chat);
 		init();
+		initSmackAndroid();
 		addChatListener();
 		groupData.addAll(myContext.getRoster().getGroups());
 		expandListAdapter = new ExpandListViewAdapter(this, groupData);
@@ -140,6 +146,24 @@ public class MainChat extends Activity {
 		addRosterListerer();
 		addPacketListener();
 
+	}
+
+	private void initSmackAndroid() {
+		SmackAndroid.init(MainChat.this);
+		ProviderManager manager = ProviderManager.getInstance();
+		manager.addIQProvider("query",
+				"http://jabber.org/protocol/disco#items",
+				new DiscoverItemsProvider());
+		manager.addIQProvider("query",
+				"http://jabber.org/protocol/disco#info",
+				new DiscoverInfoProvider());
+		manager.addIQProvider("query",
+				"http://jabber.org/protocol/disco#info",
+				new DiscoverInfoProvider());
+		manager.addIQProvider("query", "jabber:iq:search",
+				new UserSearch.Provider());
+		manager.addExtensionProvider("x", "jabber:x:conference",
+				new GroupChatInvitation.Provider());
 	}
 
 	/**
