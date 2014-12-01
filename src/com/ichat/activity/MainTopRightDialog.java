@@ -16,7 +16,7 @@ public class MainTopRightDialog extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.main_top_right_dialog);
+		setContentView(R.layout.session_top_right_dialog);
 		//dialog=new MyDialog(this);
 		layout=(LinearLayout)findViewById(R.id.main_dialog_layout);
 		layout.setOnClickListener(new OnClickListener() {

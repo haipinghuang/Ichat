@@ -72,7 +72,7 @@
 	</style>  
 	
 	<style name="Anim_style2" parent="android:Theme.NoTitleBar">         
-        <item name="android:windowAnimationStyle">@style/AnimFade</item>       
+        <item name="android:windowAnimationStyle">@style/AnimFade</item>   
 	</style> 
 	
 	<style name="Anim_style_title" parent="android:Theme">         

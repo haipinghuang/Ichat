@@ -9,6 +9,7 @@
         android:id="@+id/title"
         android:layout_width="fill_parent"
         android:layout_height="45dp"
+        android:layout_gravity="center_vertical"
         android:background="@drawable/title_bar"
         android:gravity="center_vertical" >
 
@@ -28,16 +29,14 @@
             android:textColor="#ffffff"
             android:textSize="20sp" />
 
-        <ImageButton
-            android:id="@+id/right_btn"
-            android:layout_width="67dp"
-            android:layout_height="wrap_content"
+        <Spinner
+            android:id="@+id/status"
+            android:layout_width="95dp"
+            android:layout_height="40dp"
             android:layout_alignParentRight="true"
+            android:layout_centerInParent="true"
             android:layout_centerVertical="true"
-            android:layout_marginRight="5dp"
-            android:background="@drawable/title_btn_right"
-            android:onClick="btnmainright"
-            android:src="@drawable/title_btn_function" />
+            android:spinnerMode="dropdown" />
     </RelativeLayout>
 
     <LinearLayout
@@ -51,8 +50,6 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" >
         </ListView>
-        
     </LinearLayout>
-    
-	
+
 </LinearLayout>

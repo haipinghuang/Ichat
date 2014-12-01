@@ -25,9 +25,9 @@
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:orientation="vertical"
+            android:layout_centerInParent="true"
             android:gravity="center"
-            android:layout_centerInParent="true" >
+            android:orientation="vertical" >
 
             <TextView
                 android:id="@+id/userName_tv"
@@ -35,13 +35,12 @@
                 android:layout_height="wrap_content"
                 android:textColor="#ffffff"
                 android:textSize="18sp" />
-            <TextView 
+
+            <TextView
                 android:id="@+id/presence_tv"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="13sp"
-                />
-            
+                android:textSize="13sp" />
         </LinearLayout>
 
         <ImageButton
@@ -54,6 +53,17 @@
             android:background="@drawable/title_btn_right"
             android:src="@drawable/mm_title_btn_contact_normal" />
     </RelativeLayout>
+
+    <ListView
+        android:id="@+id/listview"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_below="@id/rl_layout"
+        android:cacheColorHint="#0000"
+        android:divider="@null"
+        android:dividerHeight="1dp"
+        android:scrollbarStyle="outsideOverlay"
+        android:stackFromBottom="true" />
 
     <RelativeLayout
         android:id="@+id/rl_bottom"
@@ -83,17 +93,5 @@
             android:background="@drawable/login_edit_normal"
             android:textSize="18sp" />
     </RelativeLayout>
-
-    <ListView
-        android:id="@+id/listview"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_above="@id/rl_bottom"
-        android:layout_below="@id/rl_layout"
-        android:cacheColorHint="#0000"
-        android:divider="@null"
-        android:dividerHeight="1dp"
-        android:scrollbarStyle="outsideOverlay"
-        android:stackFromBottom="true" />
 
 </RelativeLayout>

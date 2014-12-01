@@ -47,6 +47,7 @@ public class Exit extends Activity {
 		this.finish();
 		myContext.finalize();
 		MainChat.instance.finish();// ¹Ø±ÕMain Õâ¸öActivity
+		System.exit(0);
 	}
 
 }

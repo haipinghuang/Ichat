@@ -12,6 +12,7 @@ import org.jivesoftware.smack.packet.Message;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.WindowManager;
@@ -140,7 +141,7 @@ public class ChatActivity extends Activity implements OnClickListener {
 		Bundle bundle=new Bundle();
 		bundle.putSerializable("msg", msg);
 		intent.putExtras(bundle);
-		sendBroadcast(intent);
+		LocalBroadcastManager.getInstance(ChatActivity.this).sendBroadcast(intent);
 	}
 
 	@Override

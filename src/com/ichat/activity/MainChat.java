@@ -8,6 +8,7 @@ import org.jivesoftware.smack.Chat;
 import org.jivesoftware.smack.ChatManagerListener;
 import org.jivesoftware.smack.MessageListener;
 import org.jivesoftware.smack.PacketListener;
+import org.jivesoftware.smack.Roster;
 import org.jivesoftware.smack.SmackAndroid;
 import org.jivesoftware.smack.Roster.SubscriptionMode;
 import org.jivesoftware.smack.RosterEntry;
@@ -18,6 +19,7 @@ import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.packet.Presence.Mode;
 import org.jivesoftware.smack.provider.ProviderManager;
 import org.jivesoftware.smackx.GroupChatInvitation;
 import org.jivesoftware.smackx.OfflineMessageManager;
@@ -36,6 +38,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
@@ -52,12 +55,19 @@ import android.view.animation.TranslateAnimation;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
+import android.widget.AdapterView.OnItemSelectedListener;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ExpandableListView;
 import android.widget.ExpandableListView.OnChildClickListener;
+import android.widget.ArrayAdapter;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.PopupWindow;
+import android.widget.Spinner;
+import android.widget.Switch;
+import android.widget.Toast;
 
 import com.ichat.adaper.ExpandListViewAdapter;
 import com.ichat.adaper.SessionsAdapter;
@@ -79,33 +89,42 @@ public class MainChat extends Activity {
 	public static MainChat instance = null;
 	private ViewPager mTabPager;
 	private ImageView mTabImg;// 动画图片
+	private Switch mSwitch;
 	private ImageView mTab1, mTab2, mTab3, mTab4;
+	private Spinner status;
 	private View view1, view2, view3, view4;
 	private int zero = 0;// 动画图片偏移量
 	private int currIndex = 0;// 当前页卡编号
 	private int one;// 单个水平动画位移
 	private int two;
 	private int three;
+	private View layout;
 	private LinearLayout mClose;
 	private LinearLayout mCloseBtn;
-	private View layout;
 	private boolean menu_display = false;
 	private PopupWindow menuWindow;
 	private LayoutInflater inflater;
 	private ArrayList<View> views;
-	private PagerAdapter mPagerAdapter;
 	private ListView session_lv;
-	private List<Session> sessionList = new ArrayList<Session>();
+	private PagerAdapter mPagerAdapter;
 	private SessionsAdapter sessionsAdapter;
+	private ExpandListViewAdapter expandListAdapter;
+	private ArrayAdapter<String> statusAdapter;
 	private Bundle bundle;
 	private Session session;
 	private ChatDao chatDao = new ChatDao(this);
+	private List<Session> sessionList = new ArrayList<Session>();
 	private List<RosterGroup> groupData = new ArrayList<RosterGroup>();
 	private List<RosterEntry> childData = new ArrayList<RosterEntry>();
-	private ExpandableListView expandListView;
-	private ExpandListViewAdapter expandListAdapter;
 	private MyBroadcastReceiver myReceiver = new MyBroadcastReceiver();
+	final List<String> statuss=new ArrayList<String>();
+	private ExpandableListView expandListView;
 	private MyContext myContext;
+	private int oldGroupNo;
+	private int oldChildNo;
+	
+	public int groupManager_requestCode=1;
+	public int changeGroup_requestCode=2;
 	/**
 	 * 监听回话变化
 	 */
@@ -138,16 +157,63 @@ public class MainChat extends Activity {
 		session_lv = (ListView) view1.findViewById(R.id.session_lv);
 		session_lv.setAdapter(sessionsAdapter);
 		session_lv.setOnItemClickListener(new SessionItemClickListener());
-
+		//初始化用户在线状态
+		initStatus();
 		IntentFilter filter = new IntentFilter(MyConfig.action);
-		registerReceiver(myReceiver, filter);
-
+		LocalBroadcastManager.getInstance(this).registerReceiver(myReceiver, filter);
 		receiveOffLineMsg();
 		addRosterListerer();
 		addPacketListener();
-
+		mSwitch.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+				
+			}
+		});
 	}
+	private void initStatus() {
+		statusAdapter=new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item);
+		statuss.add("空闲");
+		statuss.add("在线");
+		statuss.add("离开");
+		statuss.add("电话中");
+		statuss.add("正忙");
+		statusAdapter.addAll(statuss);
+		statusAdapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
+		status.setAdapter(statusAdapter);
+		status.setOnItemSelectedListener(new Spinner.OnItemSelectedListener() {
 
+			@Override
+			public void onItemSelected(AdapterView<?> parent, View view,
+					int position, long id) {
+				switch(position){
+				case 0:
+					updatePresence(statuss.get(position),Presence.Mode.chat);
+					break;
+				case 1:
+					updatePresence(statuss.get(position),Presence.Mode.available);
+					break;
+				case 2:
+					updatePresence(statuss.get(position),Presence.Mode.away);
+					break;
+				case 3:
+					updatePresence(statuss.get(position),Presence.Mode.away);
+					break;
+				default:
+					updatePresence(statuss.get(position),Presence.Mode.dnd);
+					break;
+				}
+				
+			}
+			@Override
+			public void onNothingSelected(AdapterView<?> parent) {
+			}
+		});
+	}
+	private void updatePresence(String status,Mode mode) {
+		Presence presence = new Presence(Presence.Type.available, status, 1, mode);
+		myContext.getConn().sendPacket(presence);
+	}
 	private void initSmackAndroid() {
 		SmackAndroid.init(MainChat.this);
 		ProviderManager manager = ProviderManager.getInstance();
@@ -162,6 +228,8 @@ public class MainChat extends Activity {
 				new DiscoverInfoProvider());
 		manager.addIQProvider("query", "jabber:iq:search",
 				new UserSearch.Provider());
+		manager.addIQProvider("vCard", "vcard-temp",  
+                new org.jivesoftware.smackx.provider.VCardProvider()); 
 		manager.addExtensionProvider("x", "jabber:x:conference",
 				new GroupChatInvitation.Provider());
 	}
@@ -236,7 +304,6 @@ public class MainChat extends Activity {
 				expandListAdapter.notifyDataSetChanged();
 			}
 		});
-
 	}
 
 	private void receiveOffLineMsg() {
@@ -258,10 +325,7 @@ public class MainChat extends Activity {
 					Log.e("MsgError", "删除已获取的离线信息失败");
 					e.printStackTrace();
 				}
-				Out.println("is sendPresence "
-						+ myContext.getConn().isSendPresence());
-				Presence presence = new Presence(Presence.Type.available);
-				myContext.getConn().sendPacket(presence);
+				updatePresence(statuss.get(1),Presence.Mode.available);
 				Out.println("is sendPresence "
 						+ myContext.getConn().isSendPresence());
 			}
@@ -432,6 +496,8 @@ public class MainChat extends Activity {
 		views.add(view2);
 		views.add(view3);
 		views.add(view4);
+		status=(Spinner)view1.findViewById(R.id.status);
+		mSwitch=(Switch) view4.findViewById(R.id.switch1);
 	}
 
 	/**
@@ -606,7 +672,7 @@ public class MainChat extends Activity {
 		Intent intent = new Intent(MainChat.this, SearchFriend.class);
 		startActivity(intent);
 	}
-
+	
 	// 设置标题栏右侧按钮的作用
 	public void btnmainright(View v) {
 		Intent intent = new Intent(MainChat.this, MainTopRightDialog.class);
@@ -622,13 +688,28 @@ public class MainChat extends Activity {
 		Intent intent = new Intent(MainChat.this, ShakeActivity.class);
 		startActivity(intent);
 	}
-
 	// 退出 伪“对话框”，其实是一个activity
 	public void exit_settings(View v) {
 		Intent intent = new Intent(MainChat.this, ExitFromSettings.class);
 		startActivity(intent);
 	}
-
+	//查看我的信息
+	public void myInfo(View v){
+		Intent intent = new Intent();
+		intent.putExtra("user", "");
+		intent.setClass(MainChat.this,
+				FriendInfo.class);
+		startActivity(intent);
+	}
+	//个人信息设置
+	public void setMyInfo(View v){
+		Intent intent=new Intent(this, SetMyInfo.class);
+		startActivity(intent);
+	}
+	public void updatePwd(View v){
+		Intent intent=new Intent(this, UpdatePwd.class);
+		startActivity(intent);
+	}
 	public class MyBroadcastReceiver extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
@@ -651,7 +732,6 @@ public class MainChat extends Activity {
 			}
 		}
 	}
-
 	private class MyOnChildClickListener implements OnChildClickListener {
 
 		@Override
@@ -671,33 +751,6 @@ public class MainChat extends Activity {
 			return false;
 		}
 	}
-
-	private void mTabPageSetAdapter(ArrayList<View> views2) {
-		mPagerAdapter = new PagerAdapter() {
-			@Override
-			public boolean isViewFromObject(View arg0, Object arg1) {
-				return arg0 == arg1;
-			}
-
-			@Override
-			public int getCount() {
-				return views.size();
-			}
-
-			@Override
-			public void destroyItem(View container, int position, Object object) {
-				((ViewPager) container).removeView(views.get(position));
-			}
-
-			@Override
-			public Object instantiateItem(View container, int position) {
-				((ViewPager) container).addView(views.get(position));
-				return views.get(position);
-			}
-		};
-		mTabPager.setAdapter(mPagerAdapter);
-	}
-
 	public class MyOnItemLongClickListener implements OnItemLongClickListener {
 
 		@Override
@@ -741,14 +794,17 @@ public class MainChat extends Activity {
 									}
 									break;
 								case 2:
-									// 改变分组暂没实现
+									//用户改变分组
+									oldGroupNo=groupPosition;
+									oldChildNo=childPosition;
 									intent = new Intent(MainChat.this,
 											ChangeGroup.class);
 									intent.putExtra("groupPosition",
 											groupPosition);
 									intent.putExtra("childPosition",
 											childPosition);
-									startActivity(intent);
+									intent.putExtra("requestCode", changeGroup_requestCode);
+									startActivityForResult(intent,changeGroup_requestCode);
 									break;
 								}
 							}
@@ -771,7 +827,8 @@ public class MainChat extends Activity {
 									int which) {
 								Intent intent = new Intent(MainChat.this,
 										GroupManage.class);
-								startActivityForResult(intent, 1);
+								intent.putExtra("requestCode", groupManager_requestCode);
+								startActivityForResult(intent,groupManager_requestCode);
 								dialog.cancel();
 							}
 						}).create().show();
@@ -779,15 +836,40 @@ public class MainChat extends Activity {
 			return false;
 		}
 	}
-
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		// 只要 是从分组管理返回的，就更新数据
-		if (requestCode == 1) {
+		// 判断分组管理是否更新了分组数据
+		if (requestCode == groupManager_requestCode) {
 			boolean flag = data.getExtras().getBoolean("groupChanged");
 			if (flag) {
 				expandListDataChanged();
 			}
+		}
+		/**
+		 * 判断用户所属分组是否改变了
+		 */
+		if(resultCode==changeGroup_requestCode){
+			int newGroupNo=data.getExtras().getInt("newGroupNo");
+			
+			Out.println("测试：changeGroup返回值："+resultCode);
+			if(oldGroupNo!=newGroupNo){
+				changUserGroup(newGroupNo);
+			}
+		}
+	}
+	private void changUserGroup(int newGroupNo) {
+		childData.addAll(groupData.get(oldGroupNo).getEntries());
+		RosterEntry entry=childData.get(oldChildNo);
+		try {
+			groupData.get(newGroupNo).addEntry(entry);
+			groupData.get(oldGroupNo).removeEntry(entry);
+		} catch (XMPPException e) {
+			Log.e("error", "用户移动分组失败");
+			Toast.makeText(MainChat.this, "用户移动分组失败", Toast.LENGTH_LONG).show();
+			e.printStackTrace();
+			return;
+		}finally{
+			childData.clear();
 		}
 	}
 
@@ -804,6 +886,33 @@ public class MainChat extends Activity {
 	@Override
 	public void finish() {
 		super.finish();
-		unregisterReceiver(myReceiver);
+		LocalBroadcastManager.getInstance(this).unregisterReceiver(myReceiver);
+	}
+	
+
+	private void mTabPageSetAdapter(ArrayList<View> views2) {
+		mPagerAdapter = new PagerAdapter() {
+			@Override
+			public boolean isViewFromObject(View arg0, Object arg1) {
+				return arg0 == arg1;
+			}
+
+			@Override
+			public int getCount() {
+				return views.size();
+			}
+
+			@Override
+			public void destroyItem(View container, int position, Object object) {
+				((ViewPager) container).removeView(views.get(position));
+			}
+
+			@Override
+			public Object instantiateItem(View container, int position) {
+				((ViewPager) container).addView(views.get(position));
+				return views.get(position);
+			}
+		};
+		mTabPager.setAdapter(mPagerAdapter);
 	}
 }

@@ -2,6 +2,8 @@ package com.ichat.adaper;
 
 import java.util.List;
 import android.content.Context;
+import android.text.Spannable;
+import android.text.SpannableString;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +12,7 @@ import android.widget.TextView;
 import com.ichat.activity.R;
 import com.ichat.mode.ChatMsgEntity;
 import com.ichat.util.Out;
+import com.ichat.util.SmileUtils;
 
 public class ChatMsgViewAdapter extends BaseAdapter {
 	public static interface IMsgViewType {
@@ -19,12 +22,11 @@ public class ChatMsgViewAdapter extends BaseAdapter {
 	private static final String TAG = ChatMsgViewAdapter.class.getSimpleName();
 
 	private List<ChatMsgEntity> coll;
-
-	private LayoutInflater mInflater;
+	private Context context;
 
 	public ChatMsgViewAdapter(Context context, List<ChatMsgEntity> coll) {
 		this.coll = coll;
-		mInflater = LayoutInflater.from(context);
+		this.context=context;
 	}
 
 	public int getCount() {
@@ -57,10 +59,10 @@ public class ChatMsgViewAdapter extends BaseAdapter {
 		ViewHolder viewHolder=null;
 		if (convertView == null) {
 			if (isComMsg) {
-				convertView = mInflater.inflate(R.layout.chatting_msg_coming,
+				convertView = View.inflate(context,R.layout.chatting_msg_coming,
 						null);
 			} else {
-				convertView = mInflater.inflate(R.layout.chatting_msg_sending,
+				convertView = View.inflate(context,R.layout.chatting_msg_sending,
 						null);
 			}
 
@@ -75,7 +77,9 @@ public class ChatMsgViewAdapter extends BaseAdapter {
 			viewHolder = (ViewHolder) convertView.getTag();
 		}
 		viewHolder.tvSendTime.setText(entity.getDate());
-		viewHolder.tvContent.setText(entity.getText());
+		Spannable span=new SpannableString(entity.getText());
+		SmileUtils.addSmiles(context, span);
+		viewHolder.tvContent.setText(span);
 		return convertView;
 	}
 

@@ -42,6 +42,7 @@ public class ExitFromSettings extends Activity {
 	public void exitbutton0(View v) {  
     	this.finish();
     	MainChat.instance.finish();//¹Ø±ÕMain Õâ¸öActivity
+    	System.exit(0);
       }  
 	
 }

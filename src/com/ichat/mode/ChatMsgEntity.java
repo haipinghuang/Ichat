@@ -9,17 +9,16 @@ public class ChatMsgEntity implements Serializable{
 	private static final long serialVersionUID = 1L;
 	private String date;
 	private String text;
-	private boolean isComMeg = true;
-	private boolean isAcked = true;
-	private String partner; //群组名 或 联系人名
-	private String groupName;
+	private boolean isComMeg = true; //来信息
+	private boolean isAcked = true; //是否已读
+	private String partner; // 联系人名
+	private String groupName; //群组名 或
 	public String getDate() {
 		return date;
 	}
 	public String getPartner() {
 		return partner;
 	}
-	
 	public String getGroupName() {
 		return groupName;
 	}
