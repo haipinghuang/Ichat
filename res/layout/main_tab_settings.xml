@@ -194,6 +194,7 @@
                 android:layout_marginTop="14dp"
                 android:background="@drawable/preference_first_item"
                 android:clickable="true"
+                android:visibility="gone"
                 android:gravity="center_vertical" >
 
                 <TextView
@@ -216,8 +217,9 @@
             <RelativeLayout
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/preference_last_item"
+                android:background="@drawable/preference_single_item"
                 android:clickable="true"
+                android:onClick="aboutIchat"
                 android:gravity="center_vertical" >
 
                 <TextView
@@ -245,6 +247,7 @@
                 android:layout_marginTop="14dp"
                 android:background="@drawable/preference_single_item"
                 android:clickable="true"
+                android:visibility="gone"
                 android:gravity="center_vertical" >
 
                 <TextView

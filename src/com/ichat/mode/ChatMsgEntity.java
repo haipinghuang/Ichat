@@ -13,9 +13,19 @@ public class ChatMsgEntity implements Serializable{
 	private boolean isAcked = true; //是否已读
 	private String partner; // 联系人名
 	private String groupName; //群组名 或
+	private Type type;
 	public String getDate() {
 		return date;
 	}
+	
+	public Type getType() {
+		return type;
+	}
+
+	public void setType(Type type) {
+		this.type = type;
+	}
+
 	public String getPartner() {
 		return partner;
 	}
@@ -28,8 +38,6 @@ public class ChatMsgEntity implements Serializable{
 	public void setPartner(String partner) {
 		this.partner = partner;
 	}
-
-
 	public boolean isComMeg() {
 		return isComMeg;
 	}
@@ -65,9 +73,25 @@ public class ChatMsgEntity implements Serializable{
 	public void setMsgType(boolean isComMsg) {
 		isComMeg = isComMsg;
 	}
-
+	public enum Type{
+		text,
+		image;
+	}
 	public ChatMsgEntity() {
 	}
+	
+	public ChatMsgEntity(String date, String text, boolean isComMeg,
+			boolean isAcked, String partner, String groupName, Type type) {
+		super();
+		this.date = date;
+		this.text = text;
+		this.isComMeg = isComMeg;
+		this.isAcked = isAcked;
+		this.partner = partner;
+		this.groupName = groupName;
+		this.type = type;
+	}
+
 	public ChatMsgEntity(String date, boolean isComMsg,
 			boolean isAcked, String partner, String text,String groupName) {
 		super();
@@ -78,11 +102,12 @@ public class ChatMsgEntity implements Serializable{
 		this.partner = partner;
 		this.groupName = partner;
 	}
-	public ChatMsgEntity(String date, String text, boolean isComMsg) {
+	public ChatMsgEntity(String date, String text, boolean isComMsg,Type type) {
 		super();
 		this.date = date;
 		this.text = text;
 		this.isComMeg = isComMsg;
+		this.type=type;
 	}
 
 }

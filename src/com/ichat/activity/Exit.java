@@ -44,6 +44,9 @@ public class Exit extends Activity {
 	}
 
 	public void exitbutton0(View v) {
+		Intent service = new Intent();
+		service.setAction("FileReceiverService");
+		this.stopService(service);
 		this.finish();
 		myContext.finalize();
 		MainChat.instance.finish();// ¹Ø±ÕMain Õâ¸öActivity

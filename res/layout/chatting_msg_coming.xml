@@ -34,15 +34,38 @@
             android:clickable="true"
             android:onClick="head_xiaohei" />
 
-        <TextView
-            android:id="@+id/tv_chatcontent"
-            style="@style/chat_content_date_style"
+        <LinearLayout
+            android:id="@+id/layout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="10dp"
             android:layout_toRightOf="@id/iv_userhead"
-            android:background="@drawable/chatfrom_bg" />
+            android:background="@drawable/chatfrom_bg"
+            android:orientation="vertical"
+            android:padding="0dp" >
 
+            <TextView
+                android:id="@+id/tv_chatcontent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:gravity="left|center"
+                android:lineSpacingExtra="2dp"
+                android:minHeight="50dp"
+                android:paddingBottom="2dp"
+                android:textColor="#ff000000"
+                android:textSize="15sp" />
+
+            <ImageView
+                android:id="@+id/imageView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="left|top"
+                android:layout_margin="0dp"
+                android:padding="0dp"
+                android:src="@drawable/default_image"
+                android:visibility="gone" />
+        </LinearLayout>
     </RelativeLayout>
 
 </LinearLayout>

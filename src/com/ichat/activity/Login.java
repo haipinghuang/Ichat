@@ -84,6 +84,7 @@ public class Login extends Activity {
 		config.setSASLAuthenticationEnabled(false);
 		config.setReconnectionAllowed(true);
 		config.setSendPresence(false);
+		config.setDebuggerEnabled(true);
 		config.setSecurityMode(SecurityMode.disabled);
 		conn = (myContext.getConn() == null ? new XMPPConnection(config)
 				: myContext.getConn());
@@ -121,10 +122,16 @@ public class Login extends Activity {
 		Intent intent = new Intent();
 		intent.setClass(Login.this, MainChat.class);
 		startActivity(intent);
+		srartService();
 		this.finish();
 		Welcome.instance.finish();
 	}
 
+	private void srartService() {
+		Intent service = new Intent();
+		service.setAction("FileReceiverService");
+		startService(service);
+	}
 	private boolean networkState() {
 		ConnectivityManager conn = (ConnectivityManager) getSystemService(Activity.CONNECTIVITY_SERVICE);
 		boolean wifi = conn.getNetworkInfo(ConnectivityManager.TYPE_WIFI)

@@ -57,6 +57,7 @@
             android:layout_toRightOf="@id/iv_username"
             android:background="@null"
             android:hint="用户名"
+            android:text="hai"
             android:singleLine="true"
             android:textSize="18.0sp" />
         <View
@@ -89,6 +90,7 @@
             android:layout_toRightOf="@id/iv_password"
             android:background="@null"
             android:hint="密码"
+            android:text="hai"
             android:inputType="textPassword"
             android:singleLine="true"
             android:textSize="18.0sp" />

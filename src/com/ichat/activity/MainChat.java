@@ -23,12 +23,18 @@ import org.jivesoftware.smack.packet.Presence.Mode;
 import org.jivesoftware.smack.provider.ProviderManager;
 import org.jivesoftware.smackx.GroupChatInvitation;
 import org.jivesoftware.smackx.OfflineMessageManager;
+import org.jivesoftware.smackx.bytestreams.socks5.provider.BytestreamsProvider;
+import org.jivesoftware.smackx.provider.DataFormProvider;
 import org.jivesoftware.smackx.provider.DiscoverInfoProvider;
 import org.jivesoftware.smackx.provider.DiscoverItemsProvider;
+import org.jivesoftware.smackx.provider.StreamInitiationProvider;
 import org.jivesoftware.smackx.search.UserSearch;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.AlertDialog.Builder;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -36,12 +42,15 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnCompletionListener;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
@@ -75,11 +84,14 @@ import com.ichat.config.MyConfig;
 import com.ichat.context.MyContext;
 import com.ichat.dao.ChatDao;
 import com.ichat.mode.ChatMsgEntity;
+import com.ichat.mode.ChatMsgEntity.Type;
 import com.ichat.mode.Entry;
 import com.ichat.mode.Session;
 import com.ichat.util.ChatUtil;
+import com.ichat.util.CommonUtils;
 import com.ichat.util.Date;
 import com.ichat.util.Out;
+
 /**
  * 登录成功后的主界面
  * 
@@ -89,7 +101,8 @@ public class MainChat extends Activity {
 	public static MainChat instance = null;
 	private ViewPager mTabPager;
 	private ImageView mTabImg;// 动画图片
-	private Switch mSwitch;
+	private Switch mSwitch; // 声音开关
+	private Switch mSwitch2;// 通知栏开关
 	private ImageView mTab1, mTab2, mTab3, mTab4;
 	private Spinner status;
 	private View view1, view2, view3, view4;
@@ -117,14 +130,14 @@ public class MainChat extends Activity {
 	private List<RosterGroup> groupData = new ArrayList<RosterGroup>();
 	private List<RosterEntry> childData = new ArrayList<RosterEntry>();
 	private MyBroadcastReceiver myReceiver = new MyBroadcastReceiver();
-	final List<String> statuss=new ArrayList<String>();
+	final List<String> statuss = new ArrayList<String>();
 	private ExpandableListView expandListView;
 	private MyContext myContext;
 	private int oldGroupNo;
 	private int oldChildNo;
-	
-	public int groupManager_requestCode=1;
-	public int changeGroup_requestCode=2;
+
+	public int groupManager_requestCode = 1;
+	public int changeGroup_requestCode = 2;
 	/**
 	 * 监听回话变化
 	 */
@@ -140,8 +153,8 @@ public class MainChat extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main_chat);
-		init();
 		initSmackAndroid();
+		init();
 		addChatListener();
 		groupData.addAll(myContext.getRoster().getGroups());
 		expandListAdapter = new ExpandListViewAdapter(this, groupData);
@@ -157,81 +170,131 @@ public class MainChat extends Activity {
 		session_lv = (ListView) view1.findViewById(R.id.session_lv);
 		session_lv.setAdapter(sessionsAdapter);
 		session_lv.setOnItemClickListener(new SessionItemClickListener());
-		//初始化用户在线状态
+		// 初始化用户在线状态
 		initStatus();
-		IntentFilter filter = new IntentFilter(MyConfig.action);
-		LocalBroadcastManager.getInstance(this).registerReceiver(myReceiver, filter);
+		IntentFilter filter = new IntentFilter(MyConfig.SYNC_MSG_ACTION);
+		LocalBroadcastManager.getInstance(this).registerReceiver(myReceiver,
+				filter);
 		receiveOffLineMsg();
 		addRosterListerer();
 		addPacketListener();
 		mSwitch.setOnCheckedChangeListener(new OnCheckedChangeListener() {
 			@Override
-			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-				
+			public void onCheckedChanged(CompoundButton buttonView,
+					boolean isChecked) {
+				if (isChecked) {
+					MyConfig.isMediaOn = 1;
+				} else {
+					MyConfig.isMediaOn = 0;
+				}
+
+			}
+		});
+		mSwitch2.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView,
+					boolean isChecked) {
+				if (isChecked) {
+					MyConfig.isNotificationOn = 1;
+				} else {
+					MyConfig.isNotificationOn = 0;
+				}
+
 			}
 		});
 	}
+
 	private void initStatus() {
-		statusAdapter=new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item);
+		statusAdapter = new ArrayAdapter<String>(this,
+				android.R.layout.simple_spinner_item);
 		statuss.add("空闲");
 		statuss.add("在线");
 		statuss.add("离开");
 		statuss.add("电话中");
 		statuss.add("正忙");
 		statusAdapter.addAll(statuss);
-		statusAdapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
+		statusAdapter
+				.setDropDownViewResource(android.R.layout.simple_spinner_item);
 		status.setAdapter(statusAdapter);
 		status.setOnItemSelectedListener(new Spinner.OnItemSelectedListener() {
 
 			@Override
 			public void onItemSelected(AdapterView<?> parent, View view,
 					int position, long id) {
-				switch(position){
+				switch (position) {
 				case 0:
-					updatePresence(statuss.get(position),Presence.Mode.chat);
+					updatePresence(statuss.get(position), Presence.Mode.chat);
 					break;
 				case 1:
-					updatePresence(statuss.get(position),Presence.Mode.available);
+					updatePresence(statuss.get(position),
+							Presence.Mode.available);
 					break;
 				case 2:
-					updatePresence(statuss.get(position),Presence.Mode.away);
+					updatePresence(statuss.get(position), Presence.Mode.away);
 					break;
 				case 3:
-					updatePresence(statuss.get(position),Presence.Mode.away);
+					updatePresence(statuss.get(position), Presence.Mode.away);
 					break;
 				default:
-					updatePresence(statuss.get(position),Presence.Mode.dnd);
+					updatePresence(statuss.get(position), Presence.Mode.dnd);
 					break;
 				}
-				
+
 			}
+
 			@Override
 			public void onNothingSelected(AdapterView<?> parent) {
 			}
 		});
 	}
-	private void updatePresence(String status,Mode mode) {
-		Presence presence = new Presence(Presence.Type.available, status, 1, mode);
+
+	private void updatePresence(String status, Mode mode) {
+		Presence presence = new Presence(Presence.Type.available, status, 1,
+				mode);
 		myContext.getConn().sendPacket(presence);
 	}
+
 	private void initSmackAndroid() {
 		SmackAndroid.init(MainChat.this);
 		ProviderManager manager = ProviderManager.getInstance();
 		manager.addIQProvider("query",
 				"http://jabber.org/protocol/disco#items",
 				new DiscoverItemsProvider());
-		manager.addIQProvider("query",
-				"http://jabber.org/protocol/disco#info",
+		manager.addIQProvider("query", "http://jabber.org/protocol/disco#info",
 				new DiscoverInfoProvider());
-		manager.addIQProvider("query",
-				"http://jabber.org/protocol/disco#info",
+		manager.addIQProvider("query", "http://jabber.org/protocol/disco#info",
 				new DiscoverInfoProvider());
 		manager.addIQProvider("query", "jabber:iq:search",
 				new UserSearch.Provider());
-		manager.addIQProvider("vCard", "vcard-temp",  
-                new org.jivesoftware.smackx.provider.VCardProvider()); 
+		manager.addIQProvider("vCard", "vcard-temp",
+				new org.jivesoftware.smackx.provider.VCardProvider());
 		manager.addExtensionProvider("x", "jabber:x:conference",
 				new GroupChatInvitation.Provider());
+		/******发送文件必须添加的Provider*******/
+		manager.addExtensionProvider("x", "jabber:x:data",
+				new DataFormProvider());
+		manager.addIQProvider("si", "http://jabber.org/protocol/si",
+				new StreamInitiationProvider());
+		manager.addIQProvider("query",
+				"http://jabber.org/protocol/bytestreams",
+				new BytestreamsProvider());
+		/******发送文件必须添加的Provider*******/
+	}
+
+	/**
+	 * 来信息播放声音
+	 */
+	public void playMedia() {
+		if (MyConfig.isMediaOn == 1) {
+			MediaPlayer mediaPlayer = null;
+			if (mediaPlayer == null) {
+				mediaPlayer = MediaPlayer.create(MainChat.this, R.raw.gl);
+			}
+			if (mediaPlayer != null) {
+				mediaPlayer.start();
+			}
+		}
+
 	}
 
 	/**
@@ -242,6 +305,7 @@ public class MainChat extends Activity {
 		myContext.getConn().addPacketListener(new PacketListener() {
 			@Override
 			public void processPacket(Packet packet) {
+				playMedia();
 				String from = packet.getFrom();
 				session = new Session("好友添加请求...", "来自于" + from,
 						Date.getDate(), packet);
@@ -251,12 +315,13 @@ public class MainChat extends Activity {
 		}, new PacketFilter() {
 			@Override
 			public boolean accept(Packet packet) {
-				if(!(packet instanceof Presence)){
+				if (!(packet instanceof Presence)) {
 					return false;
 				}
 				Presence presence = (Presence) packet;
-				if (presence.getType().equals(Presence.Type.subscribe)){
-					Out.println("Presence.Type "+presence.getType().toString());
+				if (presence.getType().equals(Presence.Type.subscribe)) {
+					Out.println("Presence.Type "
+							+ presence.getType().toString());
 					return true;
 				}
 				return false;
@@ -268,9 +333,9 @@ public class MainChat extends Activity {
 	// 监听好友变动
 	private void addRosterListerer() {
 		myContext.getRoster().addRosterListener(new RosterListener() {
-
 			@Override
 			public void presenceChanged(Presence arg0) {
+				// Out.println("好友状态发生改变");
 				expandListDataChanged();
 			}
 
@@ -308,7 +373,6 @@ public class MainChat extends Activity {
 
 	private void receiveOffLineMsg() {
 		new Thread(new Runnable() {
-
 			@Override
 			public void run() {
 				OfflineMessageManager offLineMsgManage = new OfflineMessageManager(
@@ -325,7 +389,7 @@ public class MainChat extends Activity {
 					Log.e("MsgError", "删除已获取的离线信息失败");
 					e.printStackTrace();
 				}
-				updatePresence(statuss.get(1),Presence.Mode.available);
+				updatePresence(statuss.get(1), Presence.Mode.available);
 				Out.println("is sendPresence "
 						+ myContext.getConn().isSendPresence());
 			}
@@ -356,10 +420,16 @@ public class MainChat extends Activity {
 								@Override
 								public void run() {
 									ChatMsgEntity recMsg = new ChatMsgEntity(
-											Date.getDate(), true, false,
-											ChatUtil.getPartnerName(chat),
-											message.getBody(), null);
-									chatDao.add(recMsg);
+											Date.getDate(), message.getBody(),
+											true, false, ChatUtil
+													.getPartnerName(chat),
+											null, Type.text);
+									if (!TextUtils.isEmpty(recMsg.getText())) {
+										chatDao.add(recMsg);
+										playMedia();
+										sendNotification(recMsg.getText(),
+												recMsg.getPartner());
+									}
 									session = new Session(ChatUtil
 											.getPartnerName(chat), message
 											.getBody(), Date.getDate());
@@ -396,9 +466,10 @@ public class MainChat extends Activity {
 				bundle = new Bundle();
 				intent.setClass(MainChat.this, ChatActivity.class);
 				RosterEntry tEntry = null;
-				
-				Out.println("Position："+position+"session:"+sessionList.get(position));
-				
+
+				// Out.println("Position：" + position + "session:"
+				// + sessionList.get(position));
+
 				for (RosterEntry entry : myContext.getRoster().getEntries()) {
 					if (entry.getName().equals(
 							sessionList.get(position).getName())) {
@@ -496,8 +567,9 @@ public class MainChat extends Activity {
 		views.add(view2);
 		views.add(view3);
 		views.add(view4);
-		status=(Spinner)view1.findViewById(R.id.status);
-		mSwitch=(Switch) view4.findViewById(R.id.switch1);
+		status = (Spinner) view1.findViewById(R.id.status);
+		mSwitch = (Switch) view4.findViewById(R.id.switch1);
+		mSwitch2 = (Switch) view4.findViewById(R.id.switch2);
 	}
 
 	/**
@@ -672,14 +744,15 @@ public class MainChat extends Activity {
 		Intent intent = new Intent(MainChat.this, SearchFriend.class);
 		startActivity(intent);
 	}
-	
+
 	// 设置标题栏右侧按钮的作用
 	public void btnmainright(View v) {
 		Intent intent = new Intent(MainChat.this, MainTopRightDialog.class);
 		startActivity(intent);
 	}
+
 	// 打开聊天窗口
-	public void roomManager(View v) { 
+	public void roomManager(View v) {
 		Intent intent = new Intent(MainChat.this, RoomManager.class);
 		startActivity(intent);
 	}
@@ -688,28 +761,38 @@ public class MainChat extends Activity {
 		Intent intent = new Intent(MainChat.this, ShakeActivity.class);
 		startActivity(intent);
 	}
+
 	// 退出 伪“对话框”，其实是一个activity
 	public void exit_settings(View v) {
 		Intent intent = new Intent(MainChat.this, ExitFromSettings.class);
 		startActivity(intent);
 	}
-	//查看我的信息
-	public void myInfo(View v){
+
+	// 查看我的信息
+	public void myInfo(View v) {
 		Intent intent = new Intent();
 		intent.putExtra("user", "");
-		intent.setClass(MainChat.this,
-				FriendInfo.class);
+		intent.setClass(MainChat.this, FriendInfo.class);
 		startActivity(intent);
 	}
-	//个人信息设置
-	public void setMyInfo(View v){
-		Intent intent=new Intent(this, SetMyInfo.class);
+
+	// 个人信息设置
+	public void setMyInfo(View v) {
+		Intent intent = new Intent(this, SetMyInfo.class);
 		startActivity(intent);
 	}
-	public void updatePwd(View v){
-		Intent intent=new Intent(this, UpdatePwd.class);
+
+	// 修改密码
+	public void updatePwd(View v) {
+		Intent intent = new Intent(this, UpdatePwd.class);
 		startActivity(intent);
 	}
+
+	public void aboutIchat(View v) {
+		Intent intent = new Intent(this, AboutIchat.class);
+		startActivity(intent);
+	}
+
 	public class MyBroadcastReceiver extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
@@ -732,6 +815,7 @@ public class MainChat extends Activity {
 			}
 		}
 	}
+
 	private class MyOnChildClickListener implements OnChildClickListener {
 
 		@Override
@@ -751,6 +835,7 @@ public class MainChat extends Activity {
 			return false;
 		}
 	}
+
 	public class MyOnItemLongClickListener implements OnItemLongClickListener {
 
 		@Override
@@ -794,17 +879,19 @@ public class MainChat extends Activity {
 									}
 									break;
 								case 2:
-									//用户改变分组
-									oldGroupNo=groupPosition;
-									oldChildNo=childPosition;
+									// 用户改变分组
+									oldGroupNo = groupPosition;
+									oldChildNo = childPosition;
 									intent = new Intent(MainChat.this,
 											ChangeGroup.class);
 									intent.putExtra("groupPosition",
 											groupPosition);
 									intent.putExtra("childPosition",
 											childPosition);
-									intent.putExtra("requestCode", changeGroup_requestCode);
-									startActivityForResult(intent,changeGroup_requestCode);
+									intent.putExtra("requestCode",
+											changeGroup_requestCode);
+									startActivityForResult(intent,
+											changeGroup_requestCode);
 									break;
 								}
 							}
@@ -827,8 +914,10 @@ public class MainChat extends Activity {
 									int which) {
 								Intent intent = new Intent(MainChat.this,
 										GroupManage.class);
-								intent.putExtra("requestCode", groupManager_requestCode);
-								startActivityForResult(intent,groupManager_requestCode);
+								intent.putExtra("requestCode",
+										groupManager_requestCode);
+								startActivityForResult(intent,
+										groupManager_requestCode);
 								dialog.cancel();
 							}
 						}).create().show();
@@ -836,6 +925,7 @@ public class MainChat extends Activity {
 			return false;
 		}
 	}
+
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		// 判断分组管理是否更新了分组数据
@@ -848,18 +938,19 @@ public class MainChat extends Activity {
 		/**
 		 * 判断用户所属分组是否改变了
 		 */
-		if(resultCode==changeGroup_requestCode){
-			int newGroupNo=data.getExtras().getInt("newGroupNo");
-			
-			Out.println("测试：changeGroup返回值："+resultCode);
-			if(oldGroupNo!=newGroupNo){
+		if (resultCode == changeGroup_requestCode) {
+			int newGroupNo = data.getExtras().getInt("newGroupNo");
+
+			Out.println("测试：changeGroup返回值：" + resultCode);
+			if (oldGroupNo != newGroupNo) {
 				changUserGroup(newGroupNo);
 			}
 		}
 	}
+
 	private void changUserGroup(int newGroupNo) {
 		childData.addAll(groupData.get(oldGroupNo).getEntries());
-		RosterEntry entry=childData.get(oldChildNo);
+		RosterEntry entry = childData.get(oldChildNo);
 		try {
 			groupData.get(newGroupNo).addEntry(entry);
 			groupData.get(oldGroupNo).removeEntry(entry);
@@ -868,7 +959,7 @@ public class MainChat extends Activity {
 			Toast.makeText(MainChat.this, "用户移动分组失败", Toast.LENGTH_LONG).show();
 			e.printStackTrace();
 			return;
-		}finally{
+		} finally {
 			childData.clear();
 		}
 	}
@@ -885,10 +976,10 @@ public class MainChat extends Activity {
 
 	@Override
 	public void finish() {
-		super.finish();
+		myContext.getConn().disconnect();
 		LocalBroadcastManager.getInstance(this).unregisterReceiver(myReceiver);
+		super.finish();
 	}
-	
 
 	private void mTabPageSetAdapter(ArrayList<View> views2) {
 		mPagerAdapter = new PagerAdapter() {
@@ -914,5 +1005,31 @@ public class MainChat extends Activity {
 			}
 		};
 		mTabPager.setAdapter(mPagerAdapter);
+	}
+
+	/**
+	 * 接收到消息时发送广播
+	 * 
+	 * @param content
+	 * @param partnerName
+	 */
+	public void sendNotification(String content, String partnerName) {
+		if (CommonUtils.isAppRunInBackground(this)) {
+			NotificationManager nm = null;
+			if (nm == null) {
+				nm = (NotificationManager) this
+						.getSystemService(this.NOTIFICATION_SERVICE);
+			}
+			PendingIntent intent = PendingIntent.getActivity(this, 0,
+					new Intent(this, MainChat.class),
+					Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY);
+			Notification notice = new Notification.Builder(this)
+					.setTicker("好友消息").setWhen(System.currentTimeMillis())
+					.setContentTitle(partnerName).setContentText(content)
+					.setSmallIcon(R.drawable.ic_launcher)
+					.setContentIntent(intent).build();
+			notice.flags = Notification.FLAG_AUTO_CANCEL;
+			nm.notify(168, notice);
+		}
 	}
 }

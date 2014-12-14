@@ -39,8 +39,11 @@ public class ExitFromSettings extends Activity {
 	public void exitbutton1(View v) {  
     	this.finish();    	
       }  
-	public void exitbutton0(View v) {  
-    	this.finish();
+	public void exitbutton0(View v) { 
+		Intent service = new Intent();
+		service.setAction("FileReceiverService");
+		this.stopService(service);
+		this.finish();
     	MainChat.instance.finish();//¹Ø±ÕMain Õâ¸öActivity
     	System.exit(0);
       }  
