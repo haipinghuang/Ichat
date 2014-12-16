@@ -706,16 +706,18 @@ public class ChatActivity extends Activity implements OnClickListener {
 			// Out.println("status:" + status);
 			// Thread.sleep(100);
 			// }
+			Out.println("发送成功:" + transfer.getBytesSent());
+			chatMsg_send = new ChatMsgEntity(Date.getDate(),
+					file.getAbsolutePath(), false, true, partner, null,
+					Type.image);
+			msgList.add(chatMsg_send);
+			listViewRefresh();
 		} catch (Exception e) {
 			Log.e("error", file.getName() + " 发送出错");
 			e.printStackTrace();
 			return;
 		}
-		Out.println("发送成功:" + transfer.getBytesSent());
-		chatMsg_send = new ChatMsgEntity(Date.getDate(),
-				file.getAbsolutePath(), false, true, partner, null, Type.image);
-		msgList.add(chatMsg_send);
-		listViewRefresh();
+
 		setResult(RESULT_OK);
 	}
 
