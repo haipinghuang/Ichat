@@ -21,6 +21,8 @@ and can running successful in android mobile.
 先本机安装openfire3.9.3，并开启openfire。
 然后把本项目导入到eclipse for Android也就是adt中，
 开启一个Android虚拟机，然后运行本项目就可以了。
+软件运行截图查看地址：
+http://xiangce.baidu.com/picture/album/list/150e5840dc1dca40246f5938b5da8b5c83daab3e?isscore=1#isScore
 
 本项目是为自己的毕业设计而开发的，由于时间有限，加之个人能力水平有限，所以
 项目中如有欠缺之处，望各位同行指出，本人虚心修改。
