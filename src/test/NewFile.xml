@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iq
+    id="7Ys61-8"
+    from="hai@wechat.com/Smack"
+    to="liu@wechat.com/Smack"
+    type="set" >
+
+    <si
+        id="jsi_4229952365893639252"
+        mime-type="image/png"
+        profile="http://jabber.org/protocol/si/profile/file-transfer"
+        xmlns="http://jabber.org/protocol/si" >
+
+        <file
+            name="201412061445734icon.png"
+            size="5661"
+            xmlns="http://jabber.org/protocol/si/profile/file-transfer" >
+
+            <desc>
+201412061445734icon.png
+            </desc>
+        </file>
+
+        <feature xmlns="http://jabber.org/protocol/feature-neg" >
+
+            <x
+                type="form"
+                xmlns="jabber:x:data" >
+
+                <field
+                    type="list-single"
+                    var="stream-method" >
+
+                    <option>
+
+                        <value>
+http://jabber.org/protocol/bytestreams
+                        </value>
+                    </option>
+
+                    <option>
+
+                        <value>
+http://jabber.org/protocol/ibb
+                        </value>
+                    </option>
+                </field>
+            </x>
+        </feature>
+    </si>
+
+</iq><iq
+    id="7Ys61-8"
+    from="liu@wechat.com/Smack"
+    to="hai@wechat.com/Smack"
+    type="error" >
+
+    <si
+        id="jsi_4229952365893639252"
+        mime-type="image/png"
+        profile="http://jabber.org/protocol/si/profile/file-transfer"
+        xmlns="http://jabber.org/protocol/si" >
+
+        <file
+            name="201412061445734icon.png"
+            size="5661"
+            xmlns="http://jabber.org/protocol/si/profile/file-transfer" >
+
+            <desc>
+201412061445734icon.png
+            </desc>
+        </file>
+
+        <feature xmlns="http://jabber.org/protocol/feature-neg" >
+
+            <x
+                type="form"
+                xmlns="jabber:x:data" >
+
+                <field
+                    type="list-single"
+                    var="stream-method" >
+
+                    <option>
+
+                        <value>
+http://jabber.org/protocol/bytestreams
+                        </value>
+                    </option>
+
+                    <option>
+
+                        <value>
+http://jabber.org/protocol/ibb
+                        </value>
+                    </option>
+                </field>
+            </x>
+        </feature>
+    </si>
+
+    <error
+        code="503"
+        type="cancel" >
+
+        <service-unavailable xmlns="urn:ietf:params:xml:ns:xmpp-stanzas" />
+    </error>
+
+</iq>

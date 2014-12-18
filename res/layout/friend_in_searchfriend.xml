@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:gravity="center_vertical"
+    android:layout_gravity="center"
+    android:background="#efe"
+    android:layout_height="40dp" >
+
+    <TextView
+        android:id="@+id/name"
+        android:layout_width="70dp"
+        android:layout_height="35dp"
+        android:gravity="center_vertical"
+        android:layout_marginLeft="10dp"
+        android:textColor="#000"
+        android:textSize="22sp" />
+	<Button 
+	    android:id="@+id/add"
+	    android:layout_width="70dp"
+	    android:layout_height="40dp"
+	    android:text="添加"
+	    android:layout_centerVertical="true"
+	    android:layout_marginRight="10dp"
+	    android:textSize="18sp"
+	    android:layout_alignParentRight="true"
+	    />
+
+</RelativeLayout>
